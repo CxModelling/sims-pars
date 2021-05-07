@@ -70,7 +70,3 @@ def evaluate_nodes(bn, pars):
     nodes = bn.DAG.nodes
     lps = np.sum([nodes[k]['loci'].evaluate(pars) for k in pars.keys()])
     return lps
-
-
-def as_causal_diagram(bn):
-    return
