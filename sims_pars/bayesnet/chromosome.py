@@ -1,14 +1,15 @@
 import pandas as pd
+import numpy as np
 import networkx as nx
 
 __all__ = ['Chromosome']
 
 
 class Chromosome:
-    def __init__(self, vs=None, prior=None):
+    def __init__(self, vs=None, prior=np.NaN):
         self.Locus = dict(vs) if vs else dict()
         self.LogPrior = prior
-        self.LogLikelihood = None
+        self.LogLikelihood = np.NaN
 
     def __len__(self):
         return len(self.Locus)
@@ -75,10 +76,10 @@ class Chromosome:
         self.LogPrior = None
 
     def is_prior_evaluated(self):
-        return self.LogPrior is not None
+        return not np.isnan(self.LogPrior)
 
     def is_likelihood_evaluated(self):
-        return self.LogLikelihood is not None
+        return not np.isnan(self.LogLikelihood)
 
     def is_evaluated(self):
         return self.is_prior_evaluated() and self.is_likelihood_evaluated()
