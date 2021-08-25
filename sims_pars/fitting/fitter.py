@@ -98,29 +98,10 @@ class PriorSampling(Fitter):
 
 
 if __name__ == '__main__':
-    from sims_pars.simulation import get_all_fixed_sc
     import logging
+    from sims_pars.fitting.cases import BetaBin
 
-    class BetaBin(AbsTarget):
-        def calc_likelihood(self, pars):
-            return -((pars['x1'] - 5) ** 2 + (pars['x2'] - 10) ** 2)
-
-    scr = '''
-        PCore BetaBin {
-            al = 1
-            be = 1
-
-            p1 ~ beta(al, be)
-            p2 ~ beta(al, be)
-
-            x1 ~ binom(10, p1)
-            x2 ~ binom(n2, p2) 
-        }
-        '''
-
-    sc0 = get_all_fixed_sc(scr)
-
-    model0 = BetaBin(sc0, exo={'n2': 20})
+    model0 = BetaBin()
 
     alg = PriorSampling(parallel=True)
     alg.Monitor.add_handler(logging.StreamHandler())
