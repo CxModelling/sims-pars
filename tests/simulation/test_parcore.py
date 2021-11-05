@@ -38,6 +38,20 @@ class ParameterCoreCloneTest(unittest.TestCase):
         self.assertEqual(pc_c['z'], 9)
         self.assertEqual(pc_cc['z'], 7)
 
+    def test_nullset(self):
+        script = '''
+                PCore Regression {
+                    p ~ beta(1, 1)
+                    x ~ norm(0, 1)
+                }
+                '''
+        bn = dag.bayes_net_from_script(script)
+        sc = dag.as_simulation_core(bn)
+        sc.deep_print()
+        p = sc.generate()
+
+        print(p.Locus)
+
 
 if __name__ == '__main__':
     unittest.main()

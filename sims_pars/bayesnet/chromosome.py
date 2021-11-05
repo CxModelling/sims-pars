@@ -90,6 +90,9 @@ class Chromosome:
         loc = [('{}: {:g}' if isinstance(v, float) else '{}: {}').format(k, v) for k, v in self.Locus.items()]
         return ", ".join(loc)
 
+    def __dict__(self):
+        return dict(self.Locus)
+
     def to_json(self):
         return {
             'Locus': self.Locus,

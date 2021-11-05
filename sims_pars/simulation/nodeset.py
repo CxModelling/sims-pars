@@ -329,7 +329,7 @@ class NodeSet:
 
 
 if __name__ == '__main__':
-    from epidag import bayes_net_from_script
+    from sims_pars import bayes_net_from_script
 
     bn1 = bayes_net_from_script('''
     PCore Test {

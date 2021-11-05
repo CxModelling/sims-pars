@@ -6,17 +6,17 @@ class BayesNetTest(unittest.TestCase):
     def setUp(self):
         self.BN1 = dag.bayes_net_from_script('''
         PCore A {
-        A = 5
-        B = A * 4
-        C = B + B2
-        D = pow(C)
+            A = 5
+            B = A * 4
+            C = B + B2
+            D = pow(C)
         }
         ''')
 
         self.BN2 = dag.bayes_net_from_script('''
         PCore B2 {
-        C = B
-        D = pow(C)
+            C = B
+            D = pow(C)
         }
         ''')
 
