@@ -1,11 +1,11 @@
-
-__all__ = ['draw', 'mutate_and_draw', 'AbsObjectiveSC']
-
 import numpy as np
-
 from sims_pars.fitting.base import AbsObjectiveSC, AbsObjective
 from sims_pars.bayesnet import Chromosome
 from sims_pars.simulation import get_all_fixed_sc
+from joblib import Parallel, delayed
+
+
+__all__ = ['draw', 'mutate_and_draw', 'mutate_and_draw_parallel', 'AbsObjectiveSC']
 
 
 def draw(obj: AbsObjective, unpack=False):
@@ -61,7 +61,40 @@ def mutate_and_draw(obj: AbsObjective, p0: Chromosome, scale, unpack=False):
         return p, i
 
 
+def __mutate_and_draw(obj: AbsObjective, p0: dict, scale: dict):
+    p, li, i = p0, np.inf, 0
+    while np.isinf(li):
+        sizes = {k: np.random.normal(0, v) for k, v in scale.items()}
+
+        p = {k: p0[k] + v for k, v in sizes.items()}
+        try:
+            p = obj.serve(p)
+        except ValueError:
+            continue
+        obj.evaluate_prior(p)
+        if np.isinf(p.LogPrior):
+            continue
+        li = obj.evaluate(p)
+        i += 1
+
+        if i > 20:
+            p = Chromosome()
+            p.LogLikelihood = - np.inf
+            break
+
+    return p.to_json(), i
+
+
+def mutate_and_draw_parallel(obj: AbsObjective, p0s, scale, parallel: Parallel):
+    p0s_loc = [p0.Locus for p0 in p0s]
+
+    with parallel:
+        ps = parallel(delayed(__mutate_and_draw)(obj, p0, scale) for p0 in p0s_loc)
+    return [(obj.serve_from_json(p), i) for p, i in ps]
+
+
 if __name__ == '__main__':
+    from joblib import Parallel, delayed
 
     class BetaBinSC(AbsObjectiveSC):
         def simulate(self, pars):
@@ -104,3 +137,7 @@ if __name__ == '__main__':
     print(mutate_and_draw(model0, p1, si)[0])
     print(mutate_and_draw(model0, p1, si)[0])
     print(mutate_and_draw(model0, p1, si)[0])
+
+    ps = mutate_and_draw_parallel(model0, [p1, p1, p1], si, Parallel(n_jobs=4, verbose=6))
+    for p in ps:
+        print(p)
