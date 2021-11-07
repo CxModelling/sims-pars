@@ -5,10 +5,10 @@ from sims_pars.fitting.base import AbsObjective
 from sims_pars.fitting.util import draw
 from sims_pars.fitting.results import ParameterSet
 from joblib import Parallel, delayed
-import numpy as np
+
 
 __author__ = 'TimeWz667'
-__all__ = ['Fitter']
+__all__ = ['Fitter', 'PriorSampling', 'ParameterSet']
 
 
 class IdleModel(AbsObjective):
@@ -62,7 +62,10 @@ class Fitter(metaclass=ABCMeta):
     @property
     def DefaultSettings(self) -> dict:
         return {
-            'n_collect': 1000
+            'n_collect': 1000,
+            'parallel': True,
+            'n_core': 4,
+            'verbose': 5
         }
 
     def update_settings(self, **kwargs):
@@ -94,15 +97,6 @@ class Fitter(metaclass=ABCMeta):
 class PriorSampling(Fitter):
     def __init__(self, **kwargs):
         Fitter.__init__(self, 'Prior', **kwargs)
-
-    @property
-    def DefaultSettings(self) -> dict:
-        return {
-            'n_collect': 300,
-            'parallel': True,
-            'n_core': 4,
-            'verbose': 5
-        }
 
     def initialise(self):
         self.info('Initialise')

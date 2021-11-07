@@ -7,7 +7,7 @@ __all__ = ['BetaBin', 'NormalTwo']
 
 
 class BetaBin(AbsObjectiveSC):
-    def __init__(self):
+    def __init__(self, data=(7, 14)):
         scr = '''
         PCore BetaBin {
             al = 1
@@ -22,6 +22,7 @@ class BetaBin(AbsObjectiveSC):
         '''
         sc = get_all_fixed_sc(scr)
         AbsObjectiveSC.__init__(self, sc)
+        self.Data = list(data)
 
     def simulate(self, pars):
         return {
@@ -30,7 +31,7 @@ class BetaBin(AbsObjectiveSC):
         }
 
     def link_likelihood(self, sim):
-        return -((sim['x1'] - 5) ** 2 + (sim['x2'] - 10) ** 2)
+        return -((sim['x1'] - self.Data[0]) ** 2 + (sim['x2'] - self.Data[1]) ** 2)
 
 
 class NormalTwo(AbsObjectiveSC):

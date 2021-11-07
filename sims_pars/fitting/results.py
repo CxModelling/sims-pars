@@ -13,6 +13,9 @@ class ParameterSet:
         self.ParameterList = list()
         self.DF = pd.DataFrame()
 
+    def __getitem__(self, item):
+        return self.Notes[item]
+
     def keep(self, k, note):
         self.Notes[k] = note
 
