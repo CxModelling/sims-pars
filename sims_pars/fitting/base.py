@@ -1,11 +1,12 @@
+
 from abc import ABCMeta, abstractmethod
 from sims_pars.fn import evaluate_nodes, sample
 from sims_pars.simulation.fn import find_free_parameters
 from sims_pars.simulation import SimulationCore
 from sims_pars.bayesnet import BayesianNetwork, Chromosome
 
-
-__all__ = ['AbsObjectiveBN', 'AbsObjectiveSC']
+__author__ = 'Chu-Chang Ku'
+__all__ = ['AbsObjective', 'AbsObjectiveBN', 'AbsObjectiveSC']
 
 
 class AbsObjective(metaclass=ABCMeta):
@@ -19,12 +20,12 @@ class AbsObjective(metaclass=ABCMeta):
         pass
 
     @abstractmethod
-    def sample_prior(self):
-        pass
-
-    @abstractmethod
     def serve(self, p: dict):
         raise AttributeError('Unknown parameter definition')
+
+    @abstractmethod
+    def sample_prior(self):
+        pass
 
     @abstractmethod
     def evaluate_prior(self, pars: Chromosome):
@@ -120,8 +121,18 @@ class AbsObjectiveSC(AbsObjective, metaclass=ABCMeta):
         return p.LogPrior
 
     @abstractmethod
-    def calc_likelihood(self, pars: Chromosome):
+    def simulate(self, pars):
         pass
+
+    @abstractmethod
+    def link_likelihood(self, sim):
+        pass
+
+    def calc_likelihood(self, pars: Chromosome):
+        sim = self.simulate(pars)
+        if sim is None:
+            raise ValueError('Invalid simulation run')
+        return self.link_likelihood(sim)
 
     def print(self):
         print('Model: {}'.format(self.SimulationCore.Name))
@@ -133,9 +144,18 @@ if __name__ == '__main__':
     from sims_pars.simulation import get_all_fixed_sc
     from sims_pars.bayesnet import bayes_net_from_script
 
+
     class BetaBinSC(AbsObjectiveSC):
-        def calc_likelihood(self, pars):
-            return -((pars['x1'] - 5) ** 2 + (pars['x2'] - 10) ** 2)
+        def simulate(self, pars):
+            sim = {
+                'x1': pars['x1'],
+                'x2': pars['x2']
+            }
+            return sim
+
+        def link_likelihood(self, sim):
+            return -((sim['x1'] - 5) ** 2 + (sim['x2'] - 10) ** 2)
+
 
     class BetaBinBN(AbsObjectiveBN):
         def calc_likelihood(self, pars):
@@ -146,14 +166,15 @@ if __name__ == '__main__':
 
             return -((x1 - 5) ** 2 + (x2 - 10) ** 2)
 
+
     scr = '''
     PCore BetaBin {
         al = 1
         be = 1
-        
+
         p1 ~ beta(al, be)
         p2 ~ beta(al, be)
-        
+
         x1 ~ binom(10, p1)
         x2 ~ binom(n2, p2) 
     }
@@ -198,3 +219,6 @@ if __name__ == '__main__':
     p1 = model1.sample_prior()
     print("Parameters: ", p1)
     print("Likelihood: ", model1.evaluate(p1))
+
+
+

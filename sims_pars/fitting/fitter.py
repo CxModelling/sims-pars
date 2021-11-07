@@ -1,6 +1,6 @@
 from abc import ABCMeta, abstractmethod
 from sims_pars.monitor import Monitor
-from sims_pars.fitting.target import AbsTarget
+from sims_pars.fitting.util import AbsObjective
 from sims_pars.fitting.results import ParameterSet
 from joblib import Parallel, delayed
 import numpy as np
@@ -34,13 +34,13 @@ class Fitter(metaclass=ABCMeta):
         return {}
 
     @abstractmethod
-    def fit(self, model: AbsTarget) -> ParameterSet:
+    def fit(self, model: AbsObjective) -> ParameterSet:
         pass
 
     def uses_pseudo_likelihood(self):
         return self.__uses_pseudo_likelihood
 
-    def update(self, model: AbsTarget, res, **kwargs) -> ParameterSet:
+    def update(self, model: AbsObjective, res, **kwargs) -> ParameterSet:
         raise AttributeError("The posterior is not updatable with this algorithm")
 
 
@@ -57,7 +57,7 @@ class PriorSampling(Fitter):
             'verbose': 5
         }
 
-    def fit(self, model: AbsTarget) -> ParameterSet:
+    def fit(self, model: AbsObjective) -> ParameterSet:
         self.info('Initialise condition')
 
         n_sim = self.Settings['n_sim']

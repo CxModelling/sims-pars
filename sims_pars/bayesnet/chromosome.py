@@ -72,8 +72,8 @@ class Chromosome:
         return g
 
     def reset_probability(self):
-        self.LogLikelihood = None
-        self.LogPrior = None
+        self.LogLikelihood = np.NaN
+        self.LogPrior = np.NaN
 
     def is_prior_evaluated(self):
         return not np.isnan(self.LogPrior)
