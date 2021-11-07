@@ -1,6 +1,5 @@
 from sims_pars.fitting.base import AbsObjectiveSC
 from sims_pars.simulation import get_all_fixed_sc
-import sims_pars as dag
 import scipy.stats as sts
 
 __all__ = ['BetaBin', 'NormalTwo']

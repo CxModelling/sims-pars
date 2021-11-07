@@ -6,10 +6,14 @@ __all__ = ['Monitor']
 
 
 class Monitor:
-    def __init__(self, name):
+    def __init__(self, name, stream_handler=True):
         self.Title = name
         self.Logger = logging.getLogger(name)
         self.Logger.setLevel(logging.INFO)
+
+        if stream_handler:
+            self.add_handler(logging.StreamHandler())
+
         self.Records = []
         self.Time = 0
         self.Last = dict()

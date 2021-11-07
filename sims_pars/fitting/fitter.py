@@ -133,13 +133,11 @@ class PriorSampling(Fitter):
 
 
 if __name__ == '__main__':
-    import logging
     from sims_pars.fitting.cases import BetaBin
 
     model0 = BetaBin()
 
     alg = PriorSampling(parallel=True)
-    alg.Monitor.add_handler(logging.StreamHandler())
 
     alg.fit(model0)
     res_prior = alg.Collector

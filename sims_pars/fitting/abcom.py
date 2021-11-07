@@ -127,7 +127,3 @@ if __name__ == '__main__':
 
     print(res_post.DF[['p1', 'p2']].describe())
     print(res_post.Notes)
-
-
-
-
