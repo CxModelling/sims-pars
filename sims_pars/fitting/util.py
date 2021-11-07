@@ -5,7 +5,7 @@ from sims_pars.simulation import get_all_fixed_sc
 from joblib import Parallel, delayed
 
 
-__all__ = ['draw', 'mutate_and_draw', 'mutate_and_draw_parallel', 'AbsObjectiveSC']
+__all__ = ['draw', 'mutate_and_draw', 'draw_parallel', 'mutate_and_draw_parallel', 'AbsObjectiveSC']
 
 
 def draw(obj: AbsObjective, unpack=False):
@@ -24,17 +24,16 @@ def draw(obj: AbsObjective, unpack=False):
         return p, i
 
 
+def draw_parallel(obj: AbsObjective, n_sim, parallel: Parallel):
+    samples = parallel(delayed(draw)(obj, unpack=True) for _ in range(n_sim))
+    return [(obj.serve_from_json(p), i) for p, i in samples]
+
+
 def mutate(p0: Chromosome, sizes):
     p = p0.clone()
-    p.reset_probability()
-    if isinstance(sizes, dict):
-        for k, v in sizes.items():
-            p.Locus[k] += v
-    elif isinstance(sizes, float):
-        for k in p0.Locus.keys():
-            p.Locus[k] += sizes
-    else:
-        raise TypeError('Unknown types of sizes')
+    changes = {k: v + sizes[k] for k, v in p.Locus.items() if k in sizes}
+
+    p.impulse(changes)
     return p
 
 
@@ -42,7 +41,10 @@ def mutate_and_draw(obj: AbsObjective, p0: Chromosome, scale, unpack=False):
     p, li, i = p0, np.inf, 0
     while np.isinf(li):
         sizes = {k: np.random.normal(0, v) for k, v in scale.items()}
-        p = mutate(p0, sizes)
+        try:
+            p = mutate(p0, sizes)
+        except ValueError:
+            continue
 
         obj.evaluate_prior(p)
         if np.isinf(p.LogPrior):
@@ -87,9 +89,7 @@ def __mutate_and_draw(obj: AbsObjective, p0: dict, scale: dict):
 
 def mutate_and_draw_parallel(obj: AbsObjective, p0s, scale, parallel: Parallel):
     p0s_loc = [p0.Locus for p0 in p0s]
-
-    with parallel:
-        ps = parallel(delayed(__mutate_and_draw)(obj, p0, scale) for p0 in p0s_loc)
+    ps = parallel(delayed(__mutate_and_draw)(obj, p0, scale) for p0 in p0s_loc)
     return [(obj.serve_from_json(p), i) for p, i in ps]
 
 
@@ -127,11 +127,16 @@ if __name__ == '__main__':
     p1, _ = draw(model0)
     print(p1)
 
+    ps = draw_parallel(model0, 3, Parallel(n_jobs=4, verbose=6))
+    for p, _ in ps:
+        print(p)
+
     si = {'p1': 0.1, 'p2': 0.5}
 
-    print(mutate(p1, si))
-
-    print(mutate(p1, si))
+    try:
+        print(mutate(p1, si))
+    except ValueError:
+        print('Out of boundaries')
 
     print('Mutate draw')
     print(mutate_and_draw(model0, p1, si)[0])
@@ -139,5 +144,5 @@ if __name__ == '__main__':
     print(mutate_and_draw(model0, p1, si)[0])
 
     ps = mutate_and_draw_parallel(model0, [p1, p1, p1], si, Parallel(n_jobs=4, verbose=6))
-    for p in ps:
+    for p, _ in ps:
         print(p)

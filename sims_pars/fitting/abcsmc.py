@@ -44,8 +44,7 @@ class ApproxBayesComSMC(Fitter):
 
         if self.Settings['parallel']:
             with Parallel(n_jobs=self.Settings['n_core'], verbose=self.Settings['verbose']) as parallel:
-                samples = parallel(delayed(draw)(self.Model, unpack=True) for _ in range(n_sim))
-            samples = [(self.Model.serve_from_json(p), i) for p, i in samples]
+                samples = draw_parallel(self.Model, n_sim, parallel)
         else:
             samples = [draw(self.Model) for _ in tqdm(range(n_sim))]
 
@@ -123,8 +122,8 @@ class ApproxBayesComSMC(Fitter):
         tau = self.calc_weighted_std(theta1)
 
         if self.Settings['parallel']:
-            parallel = Parallel(n_jobs=self.Settings['n_core'], verbose=self.Settings['verbose'])
-            sample_p = mutate_and_draw_parallel(self.Model, theta1, tau, parallel)
+            with Parallel(n_jobs=self.Settings['n_core'], verbose=self.Settings['verbose']) as parallel:
+                sample_p = mutate_and_draw_parallel(self.Model, theta1, tau, parallel)
         else:
             sample_p = [mutate_and_draw(self.Model, p, tau) for p in tqdm(theta1)]
 

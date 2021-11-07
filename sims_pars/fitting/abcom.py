@@ -1,5 +1,5 @@
 from sims_pars.fitting.fitter import Fitter, ParameterSet
-from sims_pars.fitting.util import draw
+from sims_pars.fitting.util import draw, draw_parallel
 import numpy as np
 from joblib import Parallel, delayed
 
@@ -41,21 +41,15 @@ class ApproxBayesCom(Fitter):
         if self.Settings['parallel']:
             self.info('Start a parallel sampler for collecting test runs')
             with Parallel(n_jobs=self.Settings['n_core'], verbose=self.Settings['verbose']) as parallel:
-                samples = parallel(delayed(draw)(self.Model, unpack=True) for _ in range(n_sim))
-
-            for p, _ in samples:
-                p = self.Model.serve_from_json(p)
-                prior.append(p)
-            n_eval = sum(i for _, i in samples)
-
+                samples = draw_parallel(self.Model, n_sim, parallel)
         else:
             self.info('Start a sampler for collecting test runs')
+            samples = [draw(self.Model) for _ in range(n_sim)]
 
-            n_eval = 0
-            for _ in range(n_sim):
-                p, i = draw(self.Model)
-                n_eval += 1
-                prior.append(p)
+        for p, _ in samples:
+            prior.append(p)
+        n_eval = sum(i for _, i in samples)
+
         li = [p.LogLikelihood for p in prior.ParameterList]
 
         eps = np.quantile(np.array(li), self.Settings['p_test'])
@@ -83,19 +77,14 @@ class ApproxBayesCom(Fitter):
             self.info('Start a parallel sampler for collecting posterior runs')
             with Parallel(n_jobs=self.Settings['n_core'], verbose=self.Settings['verbose']) as parallel:
                 samples = parallel(delayed(pick)(self.Model, eps=eps, unpack=True) for _ in range(n_sim))
-
-            for p, _ in samples:
-                p = self.Model.serve_from_json(p)
-                post.append(p)
-            n_eval = sum(i for _, i in samples)
+            samples = [(self.Model.serve_from_json(p), i) for p, i in samples]
         else:
             self.info('Start a sampler for collecting posterior runs')
+            samples = [pick(self.Model, eps) for _ in range(n_sim)]
 
-            n_eval = 0
-            for _ in range(n_sim):
-                p, i = pick(self.Model, eps)
-                n_eval += 1
-                post.append(p)
+        for p, _ in samples:
+            post.append(p)
+        n_eval = sum(i for _, i in samples)
 
         post.keep('Posterior_Draw', n_eval)
         post.keep('Posterior_Collect', n_sim)
@@ -112,16 +101,12 @@ if __name__ == '__main__':
     model0 = BetaBin()
 
     alg = PriorSampling(parallel=True)
-    alg.Monitor.add_handler(logging.StreamHandler())
-
     alg.fit(model0)
     res_post = alg.Collector
 
     print(res_post.DF[['p1', 'p2']].describe())
 
     alg = ApproxBayesCom(parallel=True)
-    alg.Monitor.add_handler(logging.StreamHandler())
-
     alg.fit(model0)
     res_post = alg.Collector
 
