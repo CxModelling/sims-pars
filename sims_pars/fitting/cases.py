@@ -1,11 +1,12 @@
-from sims_pars.fitting import AbsTarget
+from sims_pars.fitting.base import AbsObjectiveSC
 from sims_pars.simulation import get_all_fixed_sc
+import sims_pars as dag
+import scipy.stats as sts
+
+__all__ = ['BetaBin', 'NormalTwo']
 
 
-__all__ = ['BetaBin']
-
-
-class BetaBin(AbsTarget):
+class BetaBin(AbsObjectiveSC):
     def __init__(self):
         scr = '''
         PCore BetaBin {
@@ -20,10 +21,40 @@ class BetaBin(AbsTarget):
         }
         '''
         sc = get_all_fixed_sc(scr)
-        AbsTarget.__init__(self, sc)
+        AbsObjectiveSC.__init__(self, sc)
 
-    def calc_likelihood(self, pars):
-        return -((pars['x1'] - 5) ** 2 + (pars['x2'] - 10) ** 2)
+    def simulate(self, pars):
+        return {
+            'x1': pars['x1'],
+            'x2': pars['x2']
+        }
+
+    def link_likelihood(self, sim):
+        return -((sim['x1'] - 5) ** 2 + (sim['x2'] - 10) ** 2)
+
+
+class NormalTwo(AbsObjectiveSC):
+    def __init__(self, mu, n=10):
+        sc = get_all_fixed_sc('''
+        PCore Normal2 {
+            mu1 ~ norm(0, 1)
+            mu2 ~ norm(0, 1)
+        }
+        ''')
+        AbsObjectiveSC.__init__(self, sc)
+        self.Mu = mu
+        self.N = n
+        self.X1 = sts.norm(self.Mu[0], 1).rvs(n)
+        self.X2 = sts.norm(self.Mu[1], 1).rvs(n)
+
+    def simulate(self, pars):
+        return {
+            'mu1': pars['mu1'],
+            'mu2': pars['mu2']
+        }
+
+    def link_likelihood(self, sim):
+        return sts.norm.logpdf(self.X1, sim['mu1'], 1).sum() + sts.norm.logpdf(self.X2, sim['mu2'], 1).sum()
 
 
 if __name__ == '__main__':
@@ -31,5 +62,10 @@ if __name__ == '__main__':
 
     p0 = bb.sample_prior()
     print(p0)
-
     print(bb.evaluate(p0))
+
+    n2 = NormalTwo([30, -2])
+
+    p1 = n2.sample_prior()
+    print(p1)
+    print(n2.evaluate(p1))

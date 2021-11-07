@@ -8,7 +8,7 @@ from sims_pars.bayesnet import Chromosome
 from sims_pars.simulation import get_all_fixed_sc
 
 
-def draw(obj: AbsObjective):
+def draw(obj: AbsObjective, unpack=False):
     p, li, i = None, np.inf, 0
     while np.isinf(li):
         p = obj.sample_prior()
@@ -17,8 +17,11 @@ def draw(obj: AbsObjective):
         if i > 20:
             p = Chromosome()
             p.LogLikelihood = - np.inf
-            return p, i
-    return p, i
+            break
+    if unpack:
+        return p.to_json(), i
+    else:
+        return p, i
 
 
 def mutate(p0: Chromosome, sizes):
@@ -35,7 +38,7 @@ def mutate(p0: Chromosome, sizes):
     return p
 
 
-def mutate_and_draw(obj: AbsObjective, p0: Chromosome, scale):
+def mutate_and_draw(obj: AbsObjective, p0: Chromosome, scale, unpack=False):
     p, li, i = p0, np.inf, 0
     while np.isinf(li):
         sizes = {k: np.random.normal(0, v) for k, v in scale.items()}
@@ -50,8 +53,12 @@ def mutate_and_draw(obj: AbsObjective, p0: Chromosome, scale):
         if i > 20:
             p = Chromosome()
             p.LogLikelihood = - np.inf
-            return p, i
-    return p, i
+            break
+
+    if unpack:
+        return p.to_json(), i
+    else:
+        return p, i
 
 
 if __name__ == '__main__':

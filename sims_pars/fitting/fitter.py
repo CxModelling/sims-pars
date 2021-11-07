@@ -1,6 +1,8 @@
 from abc import ABCMeta, abstractmethod
+from sims_pars.bayesnet import Chromosome
 from sims_pars.monitor import Monitor
-from sims_pars.fitting.util import AbsObjective
+from sims_pars.fitting.base import AbsObjective
+from sims_pars.fitting.util import draw
 from sims_pars.fitting.results import ParameterSet
 from joblib import Parallel, delayed
 import numpy as np
@@ -9,19 +11,47 @@ __author__ = 'TimeWz667'
 __all__ = ['Fitter']
 
 
+class IdleModel(AbsObjective):
+    def __init__(self):
+        AbsObjective.__init__(self)
+        self.Parameters = Chromosome({})
+
+    @property
+    def Domain(self):
+        return []
+
+    def serve(self, p: dict):
+        return self.Parameters
+
+    def sample_prior(self):
+        return self.Parameters
+
+    def evaluate_prior(self, pars: Chromosome):
+        return 0
+
+    def calc_likelihood(self, pars: Chromosome):
+        return 0
+
+
+Idle = IdleModel()
+
+
 class Fitter(metaclass=ABCMeta):
     def __init__(self, name_logger, **kwargs):
         self.Monitor = Monitor(name_logger)
-        self.Parameters = dict(kwargs)
-        self.__uses_pseudo_likelihood = True
         self.Settings = dict(self.DefaultSettings)
-
-        for k, v in kwargs.items():
-            if k in self.Settings:
-                self.Settings[k] = v
+        self.update_settings(**kwargs)
+        self.Collector = ParameterSet()
+        self.Model = Idle
 
     def set_log_path(self, filename):
         self.Monitor.set_log_path(filename=filename)
+
+    def attach(self, model):
+        self.Model = model
+
+    def close(self):
+        self.Model = Idle
 
     def info(self, msg):
         self.Monitor.info(msg)
@@ -31,70 +61,81 @@ class Fitter(metaclass=ABCMeta):
 
     @property
     def DefaultSettings(self) -> dict:
-        return {}
+        return {
+            'n_collect': 1000
+        }
+
+    def update_settings(self, **kwargs):
+        for k, v in kwargs.items():
+            if k in self.Settings:
+                self.Settings[k] = v
+
+    def fit(self, model: AbsObjective, **kwargs):
+        self.attach(model)
+        self.Collector = ParameterSet()
+        self.update_settings(**kwargs)
+        self.initialise()
+        self.update()
+        self.collect()
 
     @abstractmethod
-    def fit(self, model: AbsObjective) -> ParameterSet:
+    def initialise(self):
         pass
 
-    def uses_pseudo_likelihood(self):
-        return self.__uses_pseudo_likelihood
+    @abstractmethod
+    def update(self):
+        pass
 
-    def update(self, model: AbsObjective, res, **kwargs) -> ParameterSet:
-        raise AttributeError("The posterior is not updatable with this algorithm")
+    @abstractmethod
+    def collect(self):
+        pass
 
 
 class PriorSampling(Fitter):
     def __init__(self, **kwargs):
-        Fitter.__init__(self, "Prior", **kwargs)
+        Fitter.__init__(self, 'Prior', **kwargs)
 
     @property
     def DefaultSettings(self) -> dict:
         return {
-            'n_sim': 300,
-            'parallel': False,
+            'n_collect': 300,
+            'parallel': True,
             'n_core': 4,
             'verbose': 5
         }
 
-    def fit(self, model: AbsObjective) -> ParameterSet:
-        self.info('Initialise condition')
+    def initialise(self):
+        self.info('Initialise')
 
-        n_sim = self.Settings['n_sim']
+    def update(self):
+        pass
 
-        res = ParameterSet('Prior')
-
-        def draw(m):
-            p = m.sample_prior()
-            li = m.evaluate(p)
-            i = 1
-            while np.isinf(li):
-                p = m.sample_prior()
-                li = m.evaluate(p)
-                i += 1
-                if i > 20:
-                    break
-            return p.to_json()
+    def collect(self):
+        n_sim = self.Settings['n_collect']
+        self.Collector = res = ParameterSet('Prior')
 
         if self.Settings['parallel']:
             self.info('Start a parallel sampler')
             with Parallel(n_jobs=self.Settings['n_core'], verbose=self.Settings['verbose']) as parallel:
-                samples = parallel(delayed(draw)(model) for _ in range(n_sim))
-            for sample in samples:
-                p = model.SimulationCore.generate(exo=sample['Locus'])
-                p.LogLikelihood = sample['LogLikelihood']
+                samples = parallel(delayed(draw)(self.Model, unpack=True) for _ in range(n_sim))
+
+            for p, _ in samples:
+                p = self.Model.serve_from_json(p)
                 res.append(p)
+            res.keep('N_Eval', sum(i for _, i in samples))
 
         else:
             self.info('Start a sampler')
 
+            n_eval = 0
             for _ in range(n_sim):
-                p = draw(model)
-                res.append(model.SimulationCore.generate(exo=p))
-
+                p, i = draw(self.Model)
+                n_eval += 1
+                res.append(p)
+            res.keep('N_Eval', n_eval)
         res.finish()
+
         self.info('Finish')
-        return res
 
 
 if __name__ == '__main__':
@@ -106,5 +147,7 @@ if __name__ == '__main__':
     alg = PriorSampling(parallel=True)
     alg.Monitor.add_handler(logging.StreamHandler())
 
-    res0 = alg.fit(model0)
-    print(res0.DF.describe())
+    alg.fit(model0)
+    res_prior = alg.Collector
+
+    print(res_prior.DF.describe())

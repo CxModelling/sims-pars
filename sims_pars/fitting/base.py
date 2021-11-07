@@ -23,6 +23,11 @@ class AbsObjective(metaclass=ABCMeta):
     def serve(self, p: dict):
         raise AttributeError('Unknown parameter definition')
 
+    def serve_from_json(self, js: dict):
+        p = self.serve(js['Locus'])
+        p.LogPrior, p.LogLikelihood = js['LogPrior'], js['LogLikelihood']
+        return p
+
     @abstractmethod
     def sample_prior(self):
         pass
