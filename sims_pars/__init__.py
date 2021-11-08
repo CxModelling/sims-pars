@@ -5,3 +5,5 @@ from sims_pars.bayesnet import bayes_net_from_script, bayes_net_from_json
 from sims_pars.fn import *
 from sims_pars.simulation.fn import *
 from sims_pars.simulation import NodeSet
+
+from sims_pars.fitting import AbsObjectiveSC, AbsObjectiveBN, ApproxBayesComSMC, ApproxBayesCom

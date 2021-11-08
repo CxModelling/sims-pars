@@ -96,7 +96,6 @@ class ApproxBayesCom(Fitter):
 if __name__ == '__main__':
     from sims_pars.fitting.cases import BetaBin
     from sims_pars.fitting.fitter import PriorSampling
-    import logging
 
     model0 = BetaBin()
 

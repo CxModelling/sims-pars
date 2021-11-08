@@ -1,13 +1,25 @@
-from setuptools import setup, find_packages
+import setuptools
 
-setup(
+with open("README.md", "r", encoding="utf-8") as fh:
+    long_description = fh.read()
+
+setuptools.setup(
     name='sims-pars',
-    version='1.0.1',
-    packages=find_packages(exclude=['notebooks', 'tests']),
-    url='https://github.com/TimeWz667/sims-pars',
-    license='MIT',
-    author='TimeWz667',
+    version='2.0.2',
+    author="Chu-Chang Ku",
     author_email='TimeWz667@gmail.com',
     description='Serving stochastic parameters to simulation models',
-    install_requires=['pandas', 'networkx', 'astunparse', 'numpy', 'scipy', 'matplotlib']
+    long_description=long_description,
+    long_description_content_type="text/markdown",
+    url="https://github.com/TimeWz667/sims-pars",
+    project_urls={
+        "Bug Tracker": "https://github.com/TimeWz667/sims-pars/issues",
+    },
+    classifiers=[
+        "Programming Language :: Python :: 3",
+        "License :: OSI Approved :: MIT License",
+        "Operating System :: OS Independent",
+    ],
+    packages=setuptools.find_packages(exclude=['notebooks', 'tests']),
+    python_requires=">=3.8",
 )

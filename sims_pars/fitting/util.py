@@ -5,7 +5,7 @@ from sims_pars.simulation import get_all_fixed_sc
 from joblib import Parallel, delayed
 
 
-__all__ = ['draw', 'mutate_and_draw', 'draw_parallel', 'mutate_and_draw_parallel', 'AbsObjectiveSC']
+__all__ = ['draw', 'mutate_and_draw', 'draw_parallel', 'mutate_and_draw_parallel', 'simulate']
 
 
 def draw(obj: AbsObjective, unpack=False):
@@ -93,9 +93,13 @@ def mutate_and_draw_parallel(obj: AbsObjective, p0s, scale, parallel: Parallel):
     return [(obj.serve_from_json(p), i) for p, i in ps]
 
 
-if __name__ == '__main__':
-    from joblib import Parallel, delayed
+def simulate(obj: AbsObjectiveSC, p):
+    if isinstance(p, dict):
+        p = obj.serve_from_json(p)
+    return obj.simulate(p)
 
+
+if __name__ == '__main__':
     class BetaBinSC(AbsObjectiveSC):
         def simulate(self, pars):
             sim = {
