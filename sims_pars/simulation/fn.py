@@ -2,11 +2,12 @@ import sims_pars as dag
 from sims_pars.simulation.nodeset import NodeSet
 from sims_pars.simulation.simucore import SimulationCore
 __author__ = 'TimeWz667'
-__all__ = ['as_simulation_core',
-           'get_all_fixed_sc',
-           'get_all_float_sc',
-           'find_free_parameters'
-           ]
+__all__ = [
+        'as_simulation_core',
+        'get_all_fixed_sc',
+        'get_all_float_sc',
+        'find_free_parameters'
+    ]
 
 
 def as_simulation_core(bn, ns: NodeSet = None):

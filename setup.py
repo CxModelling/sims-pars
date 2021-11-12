@@ -3,6 +3,41 @@ import setuptools
 with open("README.md", "r", encoding="utf-8") as fh:
     long_description = fh.read()
 
+
+keywords = [
+    "simulation",
+    "probability theory",
+    "Bayesian networks",
+    "graph",
+    "model fitting",
+]
+
+
+packages = [
+    'sims_pars',
+    'sims_pars.factory'
+    'sims_pars.bayesnet',
+    'sims_pars.bayesnet.reg',
+    'sims_pars.data',
+    'sims_pars.simulation',
+    'sims_pars.fitting'
+]
+
+
+def parse_requirements_file(filename):
+    with open(filename) as fid:
+        requires = [l.strip() for l in fid.readlines() if not l.startswith("#")]
+
+    return requires
+
+
+install_requires = []
+extras_require = {
+    dep: parse_requirements_file("requirements/" + dep + ".txt")
+    for dep in ["core", "doc"]
+}
+
+
 setuptools.setup(
     name='sims-pars',
     version='2.0.2',
@@ -21,16 +56,8 @@ setuptools.setup(
         "License :: OSI Approved :: MIT License",
         "Operating System :: OS Independent",
     ],
-    packages=setuptools.find_packages(exclude=['notebooks', 'tests']),
-    install_requires=[
-        'markdown',
-        'joblib',
-        'numpy',
-        'scipy',
-        'astunparse',
-        'astunparse',
-        'pandas',
-        'tqdm'
-    ],
+    packages=packages,
+    install_requires=install_requires,
+    extras_require=extras_require,
     python_requires=">=3.8",
 )
