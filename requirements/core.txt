@@ -1,0 +1,8 @@
+numpy>=1.19.2
+scipy>=1.5.2
+astunparse>=1.6.3
+networkx>=2.5
+pandas>=1.1.3
+setuptools>=51.0.0
+tqdm>=4.56.0
+joblib>=1.0.1
