@@ -15,10 +15,10 @@ keywords = [
 
 packages = [
     'sims_pars',
-    'sims_pars.factory'
+    'sims_pars.factory',
     'sims_pars.bayesnet',
-    'sims_pars.bayesnet.reg',
     'sims_pars.data',
+    'sims_pars.data.reg',
     'sims_pars.simulation',
     'sims_pars.fitting'
 ]
@@ -40,7 +40,7 @@ extras_require = {
 
 setuptools.setup(
     name='sims-pars',
-    version='2.0.2',
+    version='2.0.3',
     author="Chu-Chang Ku",
     author_email='TimeWz667@gmail.com',
     description='Serving stochastic parameters to simulation models',
