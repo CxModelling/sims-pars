@@ -1,7 +1,7 @@
 from sims_pars.fitting.fitter import Fitter, ParameterSet
 from sims_pars.fitting.util import *
 import numpy as np
-from joblib import Parallel, delayed
+from joblib import Parallel
 from tqdm import tqdm
 
 __author__ = 'Chu-Chang Ku'
@@ -28,7 +28,7 @@ class ApproxBayesComSMC(Fitter):
             'max_round': 20,
             'max_stay': 3,
             'n_core': 4,
-            'verbose': 0
+            'verbose': 5
         }
 
     def initialise(self):

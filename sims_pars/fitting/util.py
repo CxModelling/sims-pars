@@ -1,7 +1,6 @@
 import numpy as np
-from sims_pars.fitting.base import AbsObjectiveSC, AbsObjective
+from sims_pars.fitting.base import AbsObjectiveSimBased, AbsObjective
 from sims_pars.bayesnet import Chromosome
-from sims_pars.simulation import get_all_fixed_sc
 from joblib import Parallel, delayed
 
 
@@ -95,14 +94,16 @@ def mutate_and_draw_parallel(obj: AbsObjective, p0s, scale, parallel: Parallel):
     return [(obj.serve_from_json(p), i) for p, i in ps]
 
 
-def simulate(obj: AbsObjectiveSC, p):
+def simulate(obj: AbsObjectiveSimBased, p):
     if isinstance(p, dict):
         p = obj.serve_from_json(p)
     return obj.simulate(p)
 
 
 if __name__ == '__main__':
-    class BetaBinSC(AbsObjectiveSC):
+    from sims_pars import bayes_net_from_script
+
+    class BetaBinSC(AbsObjectiveSimBased):
         def simulate(self, pars):
             sim = {
                 'x1': pars['x1'],
@@ -127,7 +128,7 @@ if __name__ == '__main__':
     }
     '''
 
-    model0 = BetaBinSC(get_all_fixed_sc(scr), exo={'n2': 20})
+    model0 = BetaBinSC(bayes_net_from_script(scr), exo={'n2': 20})
     model0.print()
 
     p1, _ = draw(model0)

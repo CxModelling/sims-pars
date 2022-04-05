@@ -1,7 +1,5 @@
 from abc import ABCMeta, abstractmethod
 from sims_pars.fn import evaluate_nodes, sample
-from sims_pars.simulation.fn import find_free_parameters
-from sims_pars.simulation import SimulationCore
 from sims_pars.bayesnet import BayesianNetwork, Chromosome
 
 __author__ = 'Chu-Chang Ku'
@@ -96,14 +94,14 @@ class AbsObjectiveBN(AbsObjective, metaclass=ABCMeta):
 class AbsObjectiveSimBased(AbsObjective, metaclass=ABCMeta):
     def __init__(self, bn: BayesianNetwork, exo=None):
         AbsObjective.__init__(self, exo)
-        self.FreeParameters = [node for node in bn.RVRoots if node not in self.ExoParameters]
+        self.FreeParameters = [node for node in bn.Order if bn.is_rv(node)]
         self.BayesianNetwork = bn
 
         # Exclude non-float
         # todo
         p0 = self.sample_prior()
-        pfs = [k for k, v in dict(p0) if isinstance(v, float)]
-        self.FreeParameters = [pfs for node in self.FreeParameters if node in pfs]
+        pfs = [k for k, v in dict(p0).items() if isinstance(v, float)]
+        self.FreeParameters = [node for node in self.FreeParameters if node in pfs]
 
     def serve(self, p: dict):
         p = dict(p)
