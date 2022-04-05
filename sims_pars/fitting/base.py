@@ -1,4 +1,3 @@
-
 from abc import ABCMeta, abstractmethod
 from sims_pars.fn import evaluate_nodes, sample
 from sims_pars.simulation.fn import find_free_parameters
@@ -6,7 +5,7 @@ from sims_pars.simulation import SimulationCore
 from sims_pars.bayesnet import BayesianNetwork, Chromosome
 
 __author__ = 'Chu-Chang Ku'
-__all__ = ['AbsObjective', 'AbsObjectiveBN', 'AbsObjectiveSC']
+__all__ = ['AbsObjective', 'AbsObjectiveBN', 'AbsObjectiveSimBased']
 
 
 class AbsObjective(metaclass=ABCMeta):
@@ -94,36 +93,51 @@ class AbsObjectiveBN(AbsObjective, metaclass=ABCMeta):
         AbsObjective.print(self)
 
 
-class AbsObjectiveSC(AbsObjective, metaclass=ABCMeta):
-    def __init__(self, sm: SimulationCore, exo=None):
+class AbsObjectiveSimBased(AbsObjective, metaclass=ABCMeta):
+    def __init__(self, bn: BayesianNetwork, exo=None):
         AbsObjective.__init__(self, exo)
-        self.FreeParameters = find_free_parameters(sm, exo)
-        self.SimulationCore = sm
+        self.FreeParameters = [node for node in bn.RVRoots if node not in self.ExoParameters]
+        self.BayesianNetwork = bn
 
-    def serve(self, p):
+        # Exclude non-float
+        # todo
+        p0 = self.sample_prior()
+        pfs = [k for k, v in dict(p0) if isinstance(v, float)]
+        self.FreeParameters = [pfs for node in self.FreeParameters if node in pfs]
+
+    def serve(self, p: dict):
         p = dict(p)
         p.update(self.ExoParameters)
-        pars = self.SimulationCore.generate(self.SimulationCore.Name, p)
+        pars = Chromosome(sample(self.BayesianNetwork, p))
         self.evaluate_prior(pars)
         return pars
 
     @property
     def Domain(self):
         p = self.sample_prior()
-
         res = []
         for node in self.FreeParameters:
-            d = self.SimulationCore.BN[node].get_distribution(p)
+            d = self.BayesianNetwork[node].get_distribution(p)
             res.append({'Name': node, 'Type': d.Type, 'Upper': d.Upper, 'Lower': d.Lower})
         return res
 
     def sample_prior(self):
-        return self.SimulationCore.generate(exo=self.ExoParameters)
+        pars = sample(self.BayesianNetwork, self.ExoParameters)
+        pars.update(self.ExoParameters)
+        pars = Chromosome(pars)
+        self.evaluate_prior(pars)
+        return pars
 
     def evaluate_prior(self, p: Chromosome):
         if not p.is_prior_evaluated():
-            p.LogPrior = evaluate_nodes(self.SimulationCore.BN, p)
+            p.LogPrior = evaluate_nodes(self.BayesianNetwork, p)
         return p.LogPrior
+
+    def calc_likelihood(self, pars: Chromosome):
+        sim = self.simulate(pars)
+        if sim is None:
+            raise ValueError('Invalid simulation run')
+        return self.link_likelihood(sim)
 
     @abstractmethod
     def simulate(self, pars):
@@ -133,24 +147,17 @@ class AbsObjectiveSC(AbsObjective, metaclass=ABCMeta):
     def link_likelihood(self, sim):
         pass
 
-    def calc_likelihood(self, pars: Chromosome):
-        sim = self.simulate(pars)
-        if sim is None:
-            raise ValueError('Invalid simulation run')
-        return self.link_likelihood(sim)
-
     def print(self):
-        print('Model: {}'.format(self.SimulationCore.Name))
+        print('Model: {}'.format(self.BayesianNetwork.Name))
         AbsObjective.print(self)
 
 
 if __name__ == '__main__':
     from sims_pars import parse_distribution
-    from sims_pars.simulation import get_all_fixed_sc
     from sims_pars.bayesnet import bayes_net_from_script
 
 
-    class BetaBinSC(AbsObjectiveSC):
+    class BetaBinSimBased(AbsObjectiveSimBased):
         def simulate(self, pars):
             sim = {
                 'x1': pars['x1'],
@@ -185,14 +192,9 @@ if __name__ == '__main__':
     }
     '''
 
-    sc0 = get_all_fixed_sc(scr)
+    bn0 = bayes_net_from_script(scr)
 
-    sc0.deep_print()
-
-    p0 = sc0.generate(exo={'n2': 20})
-    print(p0)
-
-    model0 = BetaBinSC(sc0, exo={'n2': 20})
+    model0 = BetaBinSimBased(bn0, exo={'n2': 20})
     model0.print()
 
     print('Domain:')
@@ -204,17 +206,7 @@ if __name__ == '__main__':
     print("Likelihood: ", model0.evaluate(p1))
     print('\n')
 
-    scr = '''
-    PCore BetaBin {
-        al = 1
-        be = 1
-
-        p1 ~ beta(al, be)
-        p2 ~ beta(al, be)
-    }
-    '''
-
-    model1 = BetaBinBN(bayes_net_from_script(scr), exo={'n2': 20})
+    model1 = BetaBinBN(bn0, exo={'n2': 20})
     model1.print()
 
     print('Domain:')

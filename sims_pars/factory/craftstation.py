@@ -70,7 +70,9 @@ class Atelier:
             except AttributeError:
                 pass
             try:
-                obj.json = bp.dict()
+                obj.json = {
+                    'Args': bp.dict()
+                }
             except AttributeError:
                 pass
 

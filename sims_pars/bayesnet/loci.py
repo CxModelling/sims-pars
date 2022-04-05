@@ -1,7 +1,11 @@
 from abc import ABCMeta, abstractmethod
 import re
+
+import numpy as np
+
 from sims_pars.util import *
 from sims_pars.prob import parse_distribution, complete_function
+from pydantic import ValidationError
 
 __author__ = 'TimeWz667'
 __all__ = ['ValueLoci',
@@ -136,7 +140,11 @@ class DistributionLoci(Loci):
         gene[self.Name] = self.render(gene)
 
     def evaluate(self, pas=None):
-        return self.get_distribution(pas).logpdf(pas[self.Name])
+        try:
+            dist = self.get_distribution(pas)
+            return dist.logpdf(pas[self.Name])
+        except ValidationError:
+            return - np.Inf
 
     def to_json(self):
         js = Loci.to_json(self)

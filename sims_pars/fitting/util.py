@@ -56,6 +56,8 @@ def mutate_and_draw(obj: AbsObjective, p0: Chromosome, scale, unpack=False):
             p = Chromosome()
             p.LogLikelihood = - np.inf
             break
+    else:
+        p = p0.clone()
 
     if unpack:
         return p.to_json(), i

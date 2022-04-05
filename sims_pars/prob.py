@@ -172,7 +172,6 @@ class Const(AbsDistribution):
         return 0
 
 
-
 class CategoricalRV(AbsDistribution):
     """
     Generate Categorical data with respect to a specific probability distribution.
@@ -250,7 +249,6 @@ class EmpiricalRV(AbsDistribution):
 
     def std(self):
         return np.mean(self.X*self.X*self.Fn(self.X))
-
 
 
 DistributionCentre = get_atelier('Distributions')

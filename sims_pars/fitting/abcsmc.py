@@ -179,8 +179,9 @@ if __name__ == '__main__':
     from sims_pars.fitting.fitter import PriorSampling
 
     model0 = BetaBin()
+    print('Free parameters: ', model0.FreeParameters)
 
-    alg = PriorSampling(parallel=True, n_collect=300)
+    alg = PriorSampling(parallel=True, n_collect=200)
 
     alg.fit(model0)
     res_post = alg.Collector
