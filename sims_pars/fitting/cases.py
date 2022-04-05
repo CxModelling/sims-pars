@@ -1,11 +1,12 @@
-from sims_pars.fitting.base import AbsObjectiveSC
+from bayesnet import Chromosome
+from sims_pars.fitting.base import AbsObjectiveBN
 from sims_pars.simulation import get_all_fixed_sc
 import scipy.stats as sts
 
 __all__ = ['BetaBin', 'NormalTwo']
 
 
-class BetaBin(AbsObjectiveSC):
+class BetaBin(AbsObjectiveBN):
     def __init__(self, data=(7, 14)):
         scr = '''
         PCore BetaBin {
@@ -20,7 +21,7 @@ class BetaBin(AbsObjectiveSC):
         }
         '''
         sc = get_all_fixed_sc(scr)
-        AbsObjectiveSC.__init__(self, sc)
+        AbsObjectiveBN.__init__(self, sc)
         self.Data = list(data)
 
     def simulate(self, pars):
@@ -32,8 +33,12 @@ class BetaBin(AbsObjectiveSC):
     def link_likelihood(self, sim):
         return -((sim['x1'] - self.Data[0]) ** 2 + (sim['x2'] - self.Data[1]) ** 2)
 
+    def calc_likelihood(self, pars: Chromosome):
+        pass
 
-class NormalTwo(AbsObjectiveSC):
+
+
+class NormalTwo(AbsObjectiveBN):
     def __init__(self, mu, n=10):
         sc = get_all_fixed_sc('''
         PCore Normal2 {
@@ -41,7 +46,7 @@ class NormalTwo(AbsObjectiveSC):
             mu2 ~ norm(0, 1)
         }
         ''')
-        AbsObjectiveSC.__init__(self, sc)
+        AbsObjectiveBN.__init__(self, sc)
         self.Mu = mu
         self.N = n
         self.X1 = sts.norm(self.Mu[0], 1).rvs(n)
@@ -55,6 +60,10 @@ class NormalTwo(AbsObjectiveSC):
 
     def link_likelihood(self, sim):
         return sts.norm.logpdf(self.X1, sim['mu1'], 1).sum() + sts.norm.logpdf(self.X2, sim['mu2'], 1).sum()
+
+    def calc_likelihood(self, pars: Chromosome):
+        pass
+
 
 
 if __name__ == '__main__':

@@ -68,9 +68,9 @@ class BayesianNetwork:
             raise AttributeError('The structure has been fixed')
 
         name = loci.Name
-        if name in self.DAG:
-            if not isinstance(self.DAG.nodes[name]['loci'], ExoValueLoci):
-                raise KeyError('Duplicated variable name')
+        # if name in self.DAG:
+        #     if not isinstance(self.DAG.nodes[name]['loci'], ExoValueLoci):
+        #         raise KeyError('Duplicated variable name')
 
         self.DAG.add_node(name, loci=loci, **kwargs)
         self.DAG.remove_in_edges(name)
@@ -247,6 +247,21 @@ class BayesianNetwork:
         bn.UserDefinedFunctions.update(self.UserDefinedFunctions)
         bn.UserDefinedFunctions.update(sub_bn.UserDefinedFunctions)
         return bn
+
+    def extend(self, new_bn=None, override=True):
+        if new_bn is None:
+            new_bn = BayesianNetwork(self.Name)
+            ext = list()
+        else:
+            new_bn.defrost()
+            ext = list(new_bn.Order)
+
+        for node in self.Order:
+            if override or node not in ext:
+                new_bn.append_from_definition(node)
+
+        new_bn.complete()
+        return new_bn
 
     def copy(self, new_name=None):
         if not new_name:

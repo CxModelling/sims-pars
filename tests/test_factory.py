@@ -32,10 +32,11 @@ class TestParseFunction(unittest.TestCase):
 
     def test_two_step(self):
         fn = dag.parse_function('gamma(shape=0.01, rate=0.02)')
+        seq = dist.complete_function('gamma(shape=0.01, rate=0.02)')
         self.assertEqual(fn.Function, 'gamma')
         arg_keys = [arg['key'] for arg in fn.get_arguments()]
         self.assertListEqual(arg_keys, ['shape', 'rate'])
-        di = dist.parse_distribution(fn)
+        di = dist.parse_distribution(seq, to_complete=False)
         self.assertEqual(di.mean(), 0.5)
 
 
