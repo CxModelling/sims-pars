@@ -1,6 +1,7 @@
 from abc import ABCMeta, abstractmethod
 from sims_pars.fn import evaluate_nodes, sample
-from sims_pars.bayesnet import BayesianNetwork, Chromosome
+from sims_pars.bayesnet import BayesianNetwork, Chromosome, bayes_net_from_script, bayes_net_from_json
+from typing import Union
 
 __author__ = 'Chu-Chang Ku'
 __all__ = ['AbsObjective', 'AbsObjectiveBN', 'AbsObjectiveSimBased']
@@ -49,52 +50,14 @@ class AbsObjective(metaclass=ABCMeta):
 
 
 class AbsObjectiveBN(AbsObjective, metaclass=ABCMeta):
-    def __init__(self, bn: BayesianNetwork, exo=None):
+    def __init__(self, bn: Union[BayesianNetwork, str, dict], exo=None):
         AbsObjective.__init__(self, exo)
-        self.FreeParameters = [node for node in bn.Order if bn.is_rv(node)]
-        self.BayesianNetwork = bn
+        if isinstance(bn, str):
+            bn = bayes_net_from_script(bn)
+        elif isinstance(bn, dict):
+            bn = bayes_net_from_json(bn)
 
-    def serve(self, p: dict):
-        p = dict(p)
-        p.update(self.ExoParameters)
-        pars = Chromosome(sample(self.BayesianNetwork, p))
-        self.evaluate_prior(pars)
-        return pars
-
-    @property
-    def Domain(self):
-        p = self.sample_prior()
-        res = []
-        for node in self.FreeParameters:
-            d = self.BayesianNetwork[node].get_distribution(p)
-            res.append({'Name': node, 'Type': d.Type, 'Upper': d.Upper, 'Lower': d.Lower})
-        return res
-
-    def sample_prior(self):
-        pars = sample(self.BayesianNetwork, self.ExoParameters)
-        pars.update(self.ExoParameters)
-        pars = Chromosome(pars)
-        self.evaluate_prior(pars)
-        return pars
-
-    def evaluate_prior(self, p: Chromosome):
-        if not p.is_prior_evaluated():
-            p.LogPrior = evaluate_nodes(self.BayesianNetwork, p)
-        return p.LogPrior
-
-    @abstractmethod
-    def calc_likelihood(self, pars: Chromosome):
-        pass
-
-    def print(self):
-        print('Model: {}'.format(self.BayesianNetwork.Name))
-        AbsObjective.print(self)
-
-
-class AbsObjectiveSimBased(AbsObjective, metaclass=ABCMeta):
-    def __init__(self, bn: BayesianNetwork, exo=None):
-        AbsObjective.__init__(self, exo)
-        self.FreeParameters = [node for node in bn.Order if bn.is_rv(node)]
+        self.FreeParameters = [node for node in bn.Order if bn.is_rv(node) and node not in self.ExoParameters]
         self.BayesianNetwork = bn
 
         # Exclude non-float
@@ -131,6 +94,16 @@ class AbsObjectiveSimBased(AbsObjective, metaclass=ABCMeta):
             p.LogPrior = evaluate_nodes(self.BayesianNetwork, p)
         return p.LogPrior
 
+    @abstractmethod
+    def calc_likelihood(self, pars: Chromosome):
+        pass
+
+    def print(self):
+        print('Model: {}'.format(self.BayesianNetwork.Name))
+        AbsObjective.print(self)
+
+
+class AbsObjectiveSimBased(AbsObjectiveBN, metaclass=ABCMeta):
     def calc_likelihood(self, pars: Chromosome):
         sim = self.simulate(pars)
         if sim is None:
@@ -144,10 +117,6 @@ class AbsObjectiveSimBased(AbsObjective, metaclass=ABCMeta):
     @abstractmethod
     def link_likelihood(self, sim):
         pass
-
-    def print(self):
-        print('Model: {}'.format(self.BayesianNetwork.Name))
-        AbsObjective.print(self)
 
 
 if __name__ == '__main__':
@@ -190,9 +159,7 @@ if __name__ == '__main__':
     }
     '''
 
-    bn0 = bayes_net_from_script(scr)
-
-    model0 = BetaBinSimBased(bn0, exo={'n2': 20})
+    model0 = BetaBinSimBased(scr, exo={'n2': 20})
     model0.print()
 
     print('Domain:')
@@ -204,7 +171,7 @@ if __name__ == '__main__':
     print("Likelihood: ", model0.evaluate(p1))
     print('\n')
 
-    model1 = BetaBinBN(bn0, exo={'n2': 20})
+    model1 = BetaBinBN(scr, exo={'n2': 20})
     model1.print()
 
     print('Domain:')
@@ -214,6 +181,3 @@ if __name__ == '__main__':
     p1 = model1.sample_prior()
     print("Parameters: ", p1)
     print("Likelihood: ", model1.evaluate(p1))
-
-
-
