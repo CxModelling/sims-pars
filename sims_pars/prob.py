@@ -1,10 +1,13 @@
 import scipy.stats as sts
 from scipy.interpolate import interp1d
 import numpy as np
-import numpy.random as rd
 from abc import ABCMeta, abstractmethod
-from sims_pars.factory import get_workshop
-import sims_pars.factory.arguments as vld
+import numpy.random as rd
+from sims_pars.factory import get_atelier
+from sims_pars.factory.craftstation import AbsCreator
+import typing
+import pydantic.types as ptp
+
 
 __author__ = 'TimeWz667'
 __all__ = ['AbsDistribution',
@@ -169,6 +172,7 @@ class Const(AbsDistribution):
         return 0
 
 
+
 class CategoricalRV(AbsDistribution):
     """
     Generate Categorical data with respect to a specific probability distribution.
@@ -248,113 +252,166 @@ class EmpiricalRV(AbsDistribution):
         return np.mean(self.X*self.X*self.Fn(self.X))
 
 
-DistributionCentre = get_workshop('Distributions')
 
-DistributionCentre.register('k', Const, [vld.Float('k')])
-
-
-def d_gamma(shape, rate):
-    return SpDouble(sts.gamma(a=shape, scale=1/rate))
+DistributionCentre = get_atelier('Distributions')
 
 
-DistributionCentre.register('gamma', d_gamma, [vld.PositiveFloat('shape', default=1.0),
-                                               vld.PositiveFloat('rate', default=1.0)])
+class CreConst(AbsCreator):
+    k: float = 0
+
+    def create(self):
+        return Const(self.k)
 
 
-def d_exp(rate):
-    return SpDouble(sts.expon(scale=1/rate))
+DistributionCentre.register('k', CreConst)
 
 
-DistributionCentre.register('exp', d_exp, [vld.PositiveFloat('rate', default=1.0)])
+class CreGamma(AbsCreator):
+    shape: ptp.PositiveFloat = 1.0
+    rate: ptp.PositiveFloat = 1.0
+
+    def create(self):
+        return SpDouble(sts.gamma(a=self.shape, scale=1/self.rate))
 
 
-def d_lnorm(meanlog, sdlog):
-    return SpDouble(sts.lognorm(s=np.exp(sdlog), scale=np.exp(np.exp(meanlog))))
+DistributionCentre.register('gamma', CreGamma)
 
 
-DistributionCentre.register('lnorm', d_lnorm, [vld.PositiveFloat('meanlog', default=0),
-                                               vld.PositiveFloat('sdlog', default=1.0)])
+class CreExp(AbsCreator):
+    rate: ptp.PositiveFloat = 1.0
+
+    def create(self):
+        return SpDouble(sts.expon(scale=1/self.rate))
 
 
-def d_unif(mi, ma):
-    return SpDouble(sts.uniform(mi, ma-mi))
+DistributionCentre.register('exp', CreExp)
 
 
-DistributionCentre.register('unif', d_unif, [vld.Float('min', default=0),
-                                             vld.Float('max', default=1.0)])
+class CreLogNorm(AbsCreator):
+    meanlog: ptp.NonNegativeFloat = 0
+    sdlog: ptp.PositiveFloat = 1
+
+    def create(self):
+        return SpDouble(sts.lognorm(s=np.exp(self.sdlog), scale=np.exp(np.exp(self.meanlog))))
 
 
-def d_chi2(df):
-    return SpDouble(sts.chi2(df))
+DistributionCentre.register('lnorm', CreLogNorm)
 
 
-DistributionCentre.register('chisq', d_chi2, [vld.PositiveFloat('df', default=1.0)])
+class CreUniform(AbsCreator):
+    min: float = 0
+    max: float = 1
+
+    def create(self):
+        return SpDouble(sts.uniform(self.min, self.max-self.min))
 
 
-def d_beta(shape1, shape2):
-    return SpDouble(sts.beta(shape1, shape2))
+DistributionCentre.register('unif', CreUniform)
 
 
-DistributionCentre.register('beta', d_beta, [vld.PositiveFloat('shape1', default=1.0),
-                                             vld.PositiveFloat('shape2', default=1.0)])
+class CreChi2(AbsCreator):
+    df: ptp.PositiveFloat = 1.0
+
+    def create(self):
+        return SpDouble(sts.chi2(self.df))
 
 
-def d_invgamma(a, rate):
-    return SpDouble(sts.invgamma(a=a, scale=1/rate))
+DistributionCentre.register('chisq', CreChi2)
 
 
-DistributionCentre.register('invgamma', d_invgamma, [vld.Float('a', default=5.0, lower=2),
-                                                     vld.PositiveFloat('rate', default=1.0)])
+class CreBeta(AbsCreator):
+    shape1: ptp.PositiveFloat = 1.0
+    shape2: ptp.PositiveFloat = 1.0
+
+    def create(self):
+        return SpDouble(sts.beta(self.shape1, self.shape2))
 
 
-def d_norm(mean, sd):
-    return SpDouble(sts.norm(loc=mean, scale=sd))
+DistributionCentre.register('beta', CreBeta)
 
 
-DistributionCentre.register('norm', d_norm, [vld.Float('mean', default=0),
-                                             vld.PositiveFloat('sd', default=1.0)])
+class CreInvGamma(AbsCreator):
+    a: ptp.confloat(gt=2) = 2.0
+    rate: ptp.PositiveFloat = 1.0
+
+    def create(self):
+        return SpDouble(sts.invgamma(a=self.a, scale=1/self.rate))
 
 
-def d_triangle(a, m, b):
-    x = [a, m, b]
-    x.sort()
-    a, m, b = x
-    return SpDouble(sts.triang(loc=a, scale=b - a, c=(m - a) / (b - a)))
+DistributionCentre.register('invgamma', CreInvGamma)
 
 
-DistributionCentre.register('triangle', d_triangle, [vld.PositiveFloat('a', default=0),
-                                                     vld.PositiveFloat('m', default=0.5),
-                                                     vld.PositiveFloat('b', default=1.0)])
+class CreNorm(AbsCreator):
+    mean: float = 0
+    sd: ptp.PositiveFloat = 1.0
+
+    def create(self):
+        return SpDouble(sts.norm(loc=self.mean, scale=self.sd))
 
 
-def d_binom(size, prob):
-    return SpInteger(sts.binom(n=size, p=prob))
+DistributionCentre.register('norm', CreNorm)
 
 
-DistributionCentre.register('binom', d_binom, [vld.PositiveInteger('size', default=1),
-                                               vld.Prob('prob', default=0.5)])
+class CreTriangle(AbsCreator):
+    a: float = 0
+    m: float = 0.5
+    b: float = 1
+
+    def create(self):
+        x = [self.a, self.m, self.b]
+        x.sort()
+        a, m, b = x
+        return SpDouble(sts.triang(loc=a, scale=b - a, c=(m - a) / (b - a)))
 
 
-def d_pois(lam):
-    return SpInteger(sts.poisson(mu=lam))
+DistributionCentre.register('triangle', CreTriangle)
 
 
-DistributionCentre.register('pois', d_pois, [vld.PositiveInteger('lambda', default=1)])
+class CreBinom(AbsCreator):
+    size: ptp.PositiveInt = 1
+    prob: ptp.confloat(ge=0, le=1) = 0.5
+
+    def create(self):
+        return SpInteger(sts.binom(n=self.size, p=self.prob))
 
 
-DistributionCentre.register('cat', CategoricalRV, [vld.ProbTab('kv')])
+DistributionCentre.register('binom', CreBinom)
 
 
-def parse_distribution(di, loc=None):
-    return DistributionCentre.parse(di, loc=loc)
+class CrePois(AbsCreator):
+    lam: ptp.PositiveFloat = 1
+
+    def create(self):
+        return SpInteger(sts.poisson(mu=self.lam))
+
+
+DistributionCentre.register('pois', CrePois)
+
+
+class CreCat(AbsCreator):
+    kv: typing.Dict[str, float]
+
+    def create(self):
+        return CategoricalRV(self.kv)
+
+
+DistributionCentre.register('cat', CreCat)
+
+
+def parse_distribution(di, loc=None, append_src=True, to_complete=True):
+    return DistributionCentre.create(di, loc=loc, append_src=append_src, to_complete=to_complete)
+
+
+def complete_function(di):
+    return DistributionCentre.complete_def(di)
 
 
 if __name__ == '__main__':
     dists = [
-        'exp(0.01)',
-        'gamma(0.01, 1)',
-        'lnorm(0.5, 1)',
         'k(1)',
+        'gamma(0.01, 1)',
+        'exp(0.01)',
+        'lnorm(0.5, 1)',
         'unif(0, 1)',
         'chisq(20)',
         'triangle(2, 3, 5)',

@@ -40,7 +40,7 @@ class ParameterCoreCloneTest(unittest.TestCase):
         bn = dag.bayes_net_from_script(script_betabin)
         sc = dag.as_simulation_core(bn)
         pc = sc.generate("T3")
-        with self.assertRaises(KeyError):
+        with self.assertRaises(NameError):
             pc.get_sampler('x')()
 
     def test_div(self):

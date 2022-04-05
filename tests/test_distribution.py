@@ -1,7 +1,7 @@
 import unittest
 from collections import Counter
 import numpy as np
-from sims_pars.distribution import *
+from sims_pars.prob import *
 
 __author__ = 'TimeWz667'
 

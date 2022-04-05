@@ -1,7 +1,7 @@
 from abc import ABCMeta, abstractmethod
 import re
 from sims_pars.util import *
-from sims_pars.distribution import parse_distribution
+from sims_pars.prob import parse_distribution, complete_function
 
 __author__ = 'TimeWz667'
 __all__ = ['ValueLoci',
@@ -111,8 +111,9 @@ class ExoValueLoci(Loci):
 class DistributionLoci(Loci):
     def __init__(self, name, val, pas=None):
         Loci.__init__(self, name)
-        self.Func = parse_function(val)
-        self.__parents = pas if pas else self.Func.Parents
+        self.Func = complete_function(val)
+        self.Parsed = parse_function(val)
+        self.__parents = pas if pas else self.Parsed.Parents
 
     @property
     def Parents(self):
@@ -120,14 +121,13 @@ class DistributionLoci(Loci):
 
     @property
     def Definition(self):
-        return self.Func.Source
+        return self.Func
 
     def get_distribution(self, pas=None):
-        loc = {pa: pas[pa] for pa in self.Parents}
         try:
-            return parse_distribution(self.Func, loc=loc)
+            return parse_distribution(self.Func, loc=pas)
         except KeyError:
-            return find_data_sampler(self.Func.Function, loc=loc)
+            return find_data_sampler(self.Func.Function, loc=pas)
 
     def render(self, pas=None):
         return self.get_distribution(pas).sample()
@@ -272,7 +272,7 @@ if __name__ == '__main__':
     print(d1.render({'k': 2, 'u': 5}))
     print(d1.to_json())
 
-    d2 = 'gamma(cos(1/0.01), ss)'
+    d2 = 'gamma((1/0.01), ss)'
     d2 = DistributionLoci('s2', d2)
     print(d2.Parents)
     print(d2.render({'ss': 10, 'u': 5}))

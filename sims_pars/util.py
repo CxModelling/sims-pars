@@ -3,7 +3,6 @@ from numpy.random import choice
 import scipy.special as sp
 import math
 import ast
-import astunparse
 import re
 
 __author__ = 'TimeWz667'
@@ -159,7 +158,7 @@ def parse_math_expression(seq):
 
 def ast_to_math_expression(seq_ast, seq=None):
     v, f = find_ast_parents(seq_ast)
-    seq = seq if seq else astunparse.unparse(seq_ast)[:-1]
+    seq = seq if seq else ast.unparse(seq_ast)
     return MathExpression(seq, v, f)
 
 

@@ -27,12 +27,12 @@ class FunctionParserCase(unittest.TestCase):
         self.assertEqual(self.fn.Function, 'my_func')
 
     def test_json(self):
-        self.assertListEqual(self.fn.to_json()['Args'], ['(4 * a)', 'k', 'k', 5, False])
-        self.assertListEqual(self.fn.to_json({'k': 7})['Args'], ['(4 * a)', 'k', 7, 5, False])
+        self.assertListEqual(self.fn.to_json()['Args'], ['4 * a', 'k', 'k', 5, False])
+        self.assertListEqual(self.fn.to_json({'k': 7})['Args'], ['4 * a', 'k', 7, 5, False])
         self.assertListEqual(self.fn.to_json({'k': 7, 'a': 10})['Args'], [40, 'k', 7, 5, False])
 
     def test_order(self):
-        self.assertListEqual(self.fn.to_json()['Args'], ['(4 * a)', 'k', 'k', 5, False])
+        self.assertListEqual(self.fn.to_json()['Args'], ['4 * a', 'k', 'k', 5, False])
 
 
 class FunctionCase(unittest.TestCase):

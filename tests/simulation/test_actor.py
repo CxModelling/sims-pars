@@ -23,7 +23,7 @@ class ActorTest(unittest.TestCase):
 
     def test_single(self):
         s1 = SingleActor('C', DistributionLoci('C', 'k(c)'), ['c'])
-        self.assertRaises(KeyError, s1.sample)
+        self.assertRaises(NameError, s1.sample)
         self.assertEqual(3, s1.sample({'c': 3}))
 
     def test_compound(self):
@@ -34,7 +34,7 @@ class ActorTest(unittest.TestCase):
                                FunctionLoci('c', 'a+b'),
                                FunctionLoci('d', 'c+1')
                            ])
-        self.assertEqual('(b)->(a,c,d)->k(d)', str(c1))
+        self.assertEqual('(b)->(a,c,d)->k(k=d)', str(c1))
         self.assertEqual(6, c1.sample({'b': 4}))
 
         c2 = CompoundActor('D', FunctionLoci('D', 'pow(d, 2)'),

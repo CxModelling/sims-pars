@@ -1,7 +1,6 @@
 import unittest
 import sims_pars.util as dag
-import sims_pars.factory as fac
-import sims_pars.distribution as dist
+import sims_pars.prob as dist
 
 
 class TestParseFunction(unittest.TestCase):
@@ -38,56 +37,6 @@ class TestParseFunction(unittest.TestCase):
         self.assertListEqual(arg_keys, ['shape', 'rate'])
         di = dist.parse_distribution(fn)
         self.assertEqual(di.mean(), 0.5)
-
-
-class TestArguments(unittest.TestCase):
-    def try_truthy(self, arg, truthy, res=None):
-        self.assertTrue(arg(truthy, res))
-
-    def try_falsy(self, arg, falsy, res=None):
-        with self.assertRaises(fac.ValidationError):
-            arg(falsy, res)
-
-    def test_positive_float(self):
-        arg = fac.PositiveFloat('+1.0')
-        self.try_truthy(arg, 1)
-        self.try_falsy(arg, -1)
-
-    def test_negative_integer(self):
-        arg = fac.NegativeInteger('-1')
-        self.try_truthy(arg, -1)
-        self.try_falsy(arg, 1)
-
-    def test_regex(self):
-        arg = fac.RegExp('A-B', r'\w+-\w+')
-        self.try_truthy(arg, 'A-B')
-        self.try_falsy(arg, 'A+B')
-
-    def test_options(self):
-        arg = fac.Options('A, B, C', ['A', 'B', 'C'])
-        self.try_truthy(arg, 'A')
-        self.try_falsy(arg, 'D')
-
-    def test_options_with_resource(self):
-        arg = fac.Options('A, B, C', 'ABC')
-        self.try_truthy(arg, 'A', res={'ABC': ['A', 'B', 'C']})
-        self.try_falsy(arg, 'D', res={'ABC': ['A', 'B', 'C']})
-
-    def test_options_with_resource_objects(self):
-        from collections import namedtuple
-        entry = namedtuple('entry', 'Name')
-
-        arg = fac.Options('A, B, C', 'ABC')
-        self.try_truthy(arg, 'A', res={'ABC': {'A': entry('A'), 'B': entry('B'), 'C': entry('C')}})
-        self.try_falsy(arg, 'D', res={'ABC': {'A': entry('A'), 'B': entry('B'), 'C': entry('C')}})
-
-    def test_prob_tab(self):
-        arg = fac.ProbTab('k,v')
-        res = {'ABC': {'A': 0.2, 'B': 0.3, 'C': 0.5},
-               'BC': {'A': 'A', 'B': 0.3, 'C': 0.5}}
-        self.try_truthy(arg, 'ABC', res=res)
-        self.try_falsy(arg, 'D', res=res)
-        self.try_falsy(arg, 'BC', res=res)
 
 
 if __name__ == '__main__':

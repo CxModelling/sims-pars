@@ -19,7 +19,7 @@ class LociTest(unittest.TestCase):
 
     def test_random_variable(self):
         loci = lc.DistributionLoci('v3', 'norm(mu, 1)')
-        self.assertEqual(loci.to_json()['Def'], 'norm(mu,1)')
+        self.assertEqual(loci.to_json()['Def'], 'norm(mean=mu, sd=1)')
         self.assertIsNotNone(loci.render({'mu': 0}))
 
     def test_function_variable(self):

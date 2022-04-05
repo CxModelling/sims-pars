@@ -1,20 +1,18 @@
-from sims_pars.factory.arguments import *
-from sims_pars.factory.workshop import *
+from sims_pars.factory.craftstation import Atelier
 
-__all__ = ['get_workshop']
-
-
-WorkshopDict = dict()
+__all__ = ['get_atelier']
 
 
-def get_workshop(name):
-    if not isinstance(name, str):
-        raise NameError('A workshop name must be string')
-    # todo locker
+AtelierDict = dict()
+
+
+def get_atelier(name):
+    assert isinstance(name, str)
+
     try:
-        ws = WorkshopDict[name]
+        ws = AtelierDict[name]
     except KeyError:
-        ws = Workshop()
-        WorkshopDict[name] = ws
-    # todo finally release locker
+        AtelierDict[name] = ws = Atelier()
+
     return ws
+

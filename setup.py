@@ -52,12 +52,12 @@ setuptools.setup(
     },
     classifiers=[
         "Programming Language :: Python :: 3",
-        "Programming Language :: Python :: 3.8",
+        "Programming Language :: Python :: 3.9",
         "License :: OSI Approved :: MIT License",
         "Operating System :: OS Independent",
     ],
     packages=packages,
     install_requires=install_requires,
     extras_require=extras_require,
-    python_requires=">=3.8",
+    python_requires=">=3.9",
 )
