@@ -3,8 +3,7 @@ from scipy.interpolate import interp1d
 import numpy as np
 from abc import ABCMeta, abstractmethod
 import numpy.random as rd
-from sims_pars.factory import get_atelier
-from sims_pars.factory.craftstation import AbsCreator
+from sims_pars.factory import get_atelier, AbsCreator
 import typing
 import pydantic.types as ptp
 

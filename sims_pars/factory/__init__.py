@@ -1,6 +1,6 @@
-from sims_pars.factory.craftstation import Atelier
+from sims_pars.factory.craftstation import Atelier, AbsCreator
 
-__all__ = ['get_atelier']
+__all__ = ['get_atelier', 'AbsCreator']
 
 
 AtelierDict = dict()

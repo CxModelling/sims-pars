@@ -4,7 +4,8 @@ from sims_pars.bayesnet import Chromosome
 from joblib import Parallel, delayed
 
 
-__all__ = ['draw', 'mutate_and_draw', 'draw_parallel', 'mutate_and_draw_parallel', 'simulate']
+__all__ = ['draw', 'mutate_and_draw', 'draw_parallel', 'mutate_and_draw_parallel', 'simulate',
+           'serve_and_evaluate', 'serve_and_evaluate_parallel']
 
 
 def draw(obj: AbsObjective, unpack=False):
@@ -100,6 +101,34 @@ def simulate(obj: AbsObjectiveSimBased, p):
     return obj.simulate(p)
 
 
+def serve_and_evaluate(obj: AbsObjective, p):
+    if isinstance(p, dict):
+        p = obj.serve(p)
+
+    obj.evaluate_prior(p)
+    if np.isinf(p.LogPrior):
+        return p
+    obj.evaluate(p)
+    return p
+
+
+def __serve_and_evaluate(obj: AbsObjective, p):
+    if isinstance(p, dict):
+        p = obj.serve(p)
+
+    obj.evaluate_prior(p)
+    if np.isinf(p.LogPrior):
+        return p.to_json()
+    obj.evaluate(p)
+    return p.to_json()
+
+
+def serve_and_evaluate_parallel(obj: AbsObjective, p0s, parallel: Parallel):
+    p0s_loc = [p0.Locus for p0 in p0s]
+    ps = parallel(delayed(__serve_and_evaluate)(obj, p0) for p0 in p0s_loc)
+    return [obj.serve_from_json(p) for p in ps]
+
+
 if __name__ == '__main__':
     from sims_pars import bayes_net_from_script
 
@@ -153,3 +182,17 @@ if __name__ == '__main__':
     ps = mutate_and_draw_parallel(model0, [p1, p1, p1], si, Parallel(n_jobs=4, verbose=6))
     for p, _ in ps:
         print(p)
+
+    print('\nTest evaluation')
+
+    ps = [model0.sample_prior() for _ in range(3)]
+    ps = [serve_and_evaluate(model0, p) for p in ps]
+    for p in ps:
+        print(p, p.LogLikelihood)
+
+    print('Evaluate parallel')
+
+    ps = [model0.sample_prior() for _ in range(3)]
+    ps = serve_and_evaluate_parallel(model0, ps, Parallel(n_jobs=4, verbose=4))
+    for p in ps:
+        print(p, p.LogLikelihood)

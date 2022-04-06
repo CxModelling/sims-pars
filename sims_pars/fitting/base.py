@@ -1,10 +1,14 @@
 from abc import ABCMeta, abstractmethod
 from sims_pars.fn import evaluate_nodes, sample
-from sims_pars.bayesnet import BayesianNetwork, Chromosome, bayes_net_from_script, bayes_net_from_json
+from sims_pars.bayesnet import BayesianNetwork, Chromosome, bayes_net_from_json
 from typing import Union
+from collections import namedtuple
 
 __author__ = 'Chu-Chang Ku'
 __all__ = ['AbsObjective', 'AbsObjectiveBN', 'AbsObjectiveSimBased']
+
+
+Domain = namedtuple('Domain', ('Name', 'Type', 'Lower', 'Upper'))
 
 
 class AbsObjective(metaclass=ABCMeta):
@@ -79,7 +83,7 @@ class AbsObjectiveBN(AbsObjective, metaclass=ABCMeta):
         res = []
         for node in self.FreeParameters:
             d = self.BayesianNetwork[node].get_distribution(p)
-            res.append({'Name': node, 'Type': d.Type, 'Upper': d.Upper, 'Lower': d.Lower})
+            res.append(Domain(Name=node, Type=d.Type, Upper=d.Upper, Lower=d.Lower))
         return res
 
     def sample_prior(self):
