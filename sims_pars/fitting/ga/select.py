@@ -2,6 +2,7 @@ from pydantic.types import PositiveInt
 from abc import ABCMeta, abstractmethod
 import numpy as np
 import numpy.random as rd
+from scipy.special import logsumexp
 from sims_pars.factory import get_atelier, AbsCreator
 from sims_pars.fitting.base import AbsObjective
 
@@ -33,7 +34,26 @@ class TourSelection(AbsSelector):
             else:
                 winner = max(candidates, key=lambda p: p.LogLikelihood)
 
-            sel.append(winner)
+            sel.append(winner.clone())
+        return sel
+
+
+class ImpSelection(AbsSelector):
+    def select(self, ps, obj: AbsObjective, fitness='MAP'):
+        n_pop = len(ps)
+        eligible = [p for p in ps if np.isfinite(p.LogLikelihood)]
+
+        assert len(eligible) > 5
+
+        if fitness == 'MAP':
+            wts = np.array([p.LogPosterior for p in eligible])
+        else:
+            wts = np.array([p.LogLikelihood for p in eligible])
+
+        wts -= logsumexp(wts)
+
+        sel = rd.choice(len(eligible), n_pop, replace=True, p=np.exp(wts))
+        sel = [eligible[i].clone() for i in sel]
         return sel
 
 
@@ -56,6 +76,14 @@ class CreTour(AbsCreator):
 SelectCentre.register('tour', CreTour)
 
 
+class CreImp(AbsCreator):
+    def create(self):
+        return ImpSelection()
+
+
+SelectCentre.register('importance', CreImp)
+
+
 if __name__ == '__main__':
     from sims_pars.fitting.util import draw
     from sims_pars.fitting.cases import BetaBin
@@ -70,6 +98,10 @@ if __name__ == '__main__':
     ps0 = [p for p, _ in ps0]
     print(np.mean([p.LogLikelihood for p in ps0]))
 
-    sel0 = get_selector('tour')
+    sel0 = get_selector('tour(5)')
     ps1 = sel0.select(ps0, model0)
     print(np.mean([p.LogLikelihood for p in ps1]))
+
+    sel0 = get_selector('importance')
+    ps2 = sel0.select(ps0, model0)
+    print(np.mean([p.LogLikelihood for p in ps2]))

@@ -124,7 +124,7 @@ def __serve_and_evaluate(obj: AbsObjective, p):
 
 
 def serve_and_evaluate_parallel(obj: AbsObjective, p0s, parallel: Parallel):
-    p0s_loc = [p0.Locus for p0 in p0s]
+    p0s_loc = [p0 if isinstance(p0, dict) else p0.Locus for p0 in p0s]
     ps = parallel(delayed(__serve_and_evaluate)(obj, p0) for p0 in p0s_loc)
     return [obj.serve_from_json(p) for p in ps]
 

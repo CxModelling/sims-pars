@@ -1,2 +1,1 @@
-__author__ = 'Chu-Chang Ku'
-__all__ = []
+from sims_pars.fitting.ga.alg import GeneticAlg

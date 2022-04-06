@@ -16,6 +16,9 @@ class ParameterSet:
     def __getitem__(self, item):
         return self.Notes[item]
 
+    def __len__(self):
+        return len(self.ParameterList)
+
     def keep(self, k, note):
         self.Notes[k] = note
 
