@@ -51,7 +51,7 @@ class RwMutator(AbsMutator):
         return locus
 
 
-MutatorCentre = get_atelier('crossover')
+MutatorCentre = get_atelier('mutator')
 
 
 def get_mutator(seq):
