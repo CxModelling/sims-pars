@@ -96,8 +96,8 @@ class GeneticAlg(Fitter):
 
         for i in sel:
             p1, p2 = self.Crossover.crossover(ps[i * 2], ps[i * 2 + 1], self.Model)
-            ps[i * 2] = serve_and_evaluate(model0, p1)
-            ps[i * 2 + 1] = serve_and_evaluate(model0, p2)
+            ps[i * 2] = serve_and_evaluate(self.Model, p1)
+            ps[i * 2 + 1] = serve_and_evaluate(self.Model, p2)
 
     def __mutation(self):
         ps = self.Collector.ParameterList

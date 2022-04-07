@@ -1,6 +1,6 @@
 from abc import ABCMeta, abstractmethod
 from sims_pars.fn import evaluate_nodes, sample
-from sims_pars.bayesnet import BayesianNetwork, Chromosome, bayes_net_from_json
+from sims_pars.bayesnet import BayesianNetwork, Chromosome, bayes_net_from_json, bayes_net_from_script
 from typing import Union
 from collections import namedtuple
 
@@ -125,7 +125,6 @@ class AbsObjectiveSimBased(AbsObjectiveBN, metaclass=ABCMeta):
 
 if __name__ == '__main__':
     from sims_pars import parse_distribution
-    from sims_pars.bayesnet import bayes_net_from_script
 
 
     class BetaBinSimBased(AbsObjectiveSimBased):

@@ -20,7 +20,8 @@ packages = [
     # 'sims_pars.bayesnet.reg',
     # 'sims_pars.data',
     'sims_pars.simulation',
-    'sims_pars.fitting'
+    'sims_pars.fitting',
+    'sims_pars.fitting.ga'
 ]
 
 
