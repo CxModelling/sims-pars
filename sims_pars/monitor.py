@@ -11,7 +11,7 @@ class Monitor:
         self.Logger = logging.getLogger(name)
         self.Logger.setLevel(logging.INFO)
 
-        if stream_handler:
+        if stream_handler and not self.Logger.hasHandlers():
             self.add_handler(logging.StreamHandler())
 
         self.Records = []
