@@ -68,6 +68,7 @@ def evaluate_nodes(bn, pars):
     :return: the log likelihood of pars
     """
     nodes = bn.DAG.nodes
+
     lps = np.sum([nodes[k]['loci'].evaluate(pars) for k in pars.keys() if k in nodes])
     if np.isnan(lps):
         lps = - np.Inf

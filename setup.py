@@ -41,7 +41,7 @@ extras_require = {
 
 setuptools.setup(
     name='sims-pars',
-    version='2.2.0',
+    version='2.2.1',
     author="Chu-Chang Ku",
     author_email='TimeWz667@gmail.com',
     description='Serving stochastic parameters to simulation models',
