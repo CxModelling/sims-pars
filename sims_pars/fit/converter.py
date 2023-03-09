@@ -139,6 +139,3 @@ if __name__ == '__main__':
     us = [cii.value2uniform(v) for v in vs]
     print(vs)
     print(us)
-
-
-
