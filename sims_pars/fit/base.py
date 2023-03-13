@@ -1,19 +1,30 @@
+import numpy as np
+
+from fit.targets import AbsData
 from sims_pars.fn import evaluate_nodes, sample
 from sims_pars.bayesnet import BayesianNetwork, Chromosome, bayes_net_from_json, bayes_net_from_script
-from abc import ABCMeta, abstractmethod
 from typing import Union
 from collections import namedtuple
 
 __author__ = 'Chu-Chang Ku'
-__all__ = []
+__all__ = ['Particle', 'Domain', 'DataModel']
 
 
-Domain = namedtuple('Domain', ('Name', 'Type', 'Lower', 'Upper'))
+class Domain:
+    def __init__(self, name, tp='float', lower=-np.inf, upper=np.inf, loc=0, scale=1):
+        self.Name = name
+        self.Type = tp
+        self.Lower, self.Upper = lower, upper
+        self.Location, self.Scale = loc, scale
+
+    def __str__(self):
+        return f'Domain({self.Name}, {self.Type}, LU=[{self.Lower}, {self.Upper}], LS=[{self.Location}, {self.Scale}]))'
+
+    __repr__ = __str__
 
 
 class Particle:
-    def __init__(self, xs, pars, sims):
-        self.Xs = xs
+    def __init__(self, pars, sims):
         self.Pars = pars
         self.Sims = sims
         self.Notes = dict()
@@ -21,9 +32,12 @@ class Particle:
     def __setitem__(self, key, value):
         self.Notes[key] = value
 
+    def __getitem__(self, item):
+        return self.Notes[item]
 
-class Simulator(metaclass=ABCMeta):
-    def __init__(self,  bn: Union[BayesianNetwork, str, dict], exo=None):
+
+class DataModel:
+    def __init__(self, data: dict[str, AbsData], bn: Union[BayesianNetwork, str, dict], exo=None):
         self.ExoParameters = dict(exo) if exo is not None else dict()
         self.FreeParameters = dict()
 
@@ -40,6 +54,7 @@ class Simulator(metaclass=ABCMeta):
         p0 = self.sample_prior()
         pfs = [k for k, v in dict(p0).items() if isinstance(v, float)]
         self.FreeParameters = [node for node in self.FreeParameters if node in pfs]
+        self.Data = data
 
     def serve(self, p: dict):
         p = dict(p)
@@ -54,7 +69,7 @@ class Simulator(metaclass=ABCMeta):
         res = []
         for node in self.FreeParameters:
             d = self.BayesianNetwork[node].get_distribution(p)
-            res.append(Domain(Name=node, Type=d.Type, Upper=d.Upper, Lower=d.Lower))
+            res.append(Domain(Name=node, Type=d.Type, Upper=d.Upper, Lower=d.Lower, Location=d.mean(), Scale=d.std()))
         return res
 
     def serve_from_json(self, js: dict):
@@ -74,27 +89,23 @@ class Simulator(metaclass=ABCMeta):
             p.LogPrior = evaluate_nodes(self.BayesianNetwork, p)
         return p.LogPrior
 
-    def calc_likelihood(self, pars: Chromosome):
-        sim = self.simulate(pars)
-        if sim is None:
-            raise ValueError('Invalid simulation run')
-        return self.link_likelihood(sim)
+    def simulate(self, pars) -> Particle:
+        return Particle(pars, pars)
 
-    def evaluate(self, pars: Chromosome) -> float:
-        # prevent re-evaluation
-        if not pars.is_likelihood_evaluated():
-            pars.LogLikelihood = self.calc_likelihood(pars)
-        return pars.LogLikelihood
+    def flatten(self, particle: Particle) -> None:
+        pars = particle.Pars
+        xs = [pars[dom.Name] for dom in self.Domain]
+        particle['Xs'] = [pars[dom.Name] for dom in self.Domain]
 
-    @abstractmethod
-    def simulate(self, pars):
-        pass
-
-    @abstractmethod
-    def link_likelihood(self, sim):
-        pass
+        sim = particle.Sims
+        particle['Ys'] = [sim[k] for k in self.Data.items()]
 
     def print(self):
         print('Model: {}'.format(self.BayesianNetwork.Name))
         print('Free parameters: {}'.format(', '.join(self.FreeParameters)))
         print('Exogenous variables: {}'.format(', '.join(self.ExoParameters)))
+
+
+class AbsFitter:
+    pass
+
