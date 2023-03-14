@@ -3,7 +3,7 @@ from sims_pars.bayesnet import Chromosome
 from sims_pars.monitor import Monitor
 from sims_pars.fitting.base import AbsObjective
 from sims_pars.fitting.util import draw
-from sims_pars.fitting.results import ParameterSet
+from fit.results import ParameterSet
 from joblib import Parallel, delayed
 
 

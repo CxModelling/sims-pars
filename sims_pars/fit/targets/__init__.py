@@ -3,7 +3,7 @@ from sims_pars.fit.targets.single import *
 from sims_pars.fit.targets.multi import *
 from sims_pars import parse_distribution
 
-__all__ = ['read_targets', 'AbsSingleData']
+__all__ = ['read_targets', 'AbsSingleData', 'AbsData']
 
 
 def read_targets(src, error=0.1):

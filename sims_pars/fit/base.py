@@ -1,10 +1,11 @@
 import numpy as np
-
-from fit.targets import AbsData
+from abc import ABCMeta, abstractmethod
 from sims_pars.fn import evaluate_nodes, sample
+from sims_pars.monitor import Monitor
+from sims_pars.fit.targets import AbsData
+from sims_pars.fit.results import ParameterSet
 from sims_pars.bayesnet import BayesianNetwork, Chromosome, bayes_net_from_json, bayes_net_from_script
 from typing import Union
-from collections import namedtuple
 
 __author__ = 'Chu-Chang Ku'
 __all__ = ['Particle', 'Domain', 'DataModel']
@@ -69,7 +70,7 @@ class DataModel:
         res = []
         for node in self.FreeParameters:
             d = self.BayesianNetwork[node].get_distribution(p)
-            res.append(Domain(Name=node, Type=d.Type, Upper=d.Upper, Lower=d.Lower, Location=d.mean(), Scale=d.std()))
+            res.append(Domain(name=node, tp=d.Type, upper=d.Upper, lower=d.Lower, loc=d.mean(), scale=d.std()))
         return res
 
     def serve_from_json(self, js: dict):
@@ -92,13 +93,37 @@ class DataModel:
     def simulate(self, pars) -> Particle:
         return Particle(pars, pars)
 
+    def calc_distance(self, particle: Particle) -> float:
+        try:
+            ys = particle['Ys']
+        except KeyError:
+            self.flatten(particle)
+            ys = particle['Ys']
+
+        di = 0
+        for k, dat in self.Data.items():
+            di += dat.calc_distance(ys)
+        return di
+
+    def calc_likelihood(self, particle: Particle) -> float:
+        try:
+            ys = particle['Ys']
+        except KeyError:
+            self.flatten(particle)
+            ys = particle['Ys']
+
+        li = 0
+        for k, dat in self.Data.items():
+            li += dat.calc_likelihood(ys)
+        return li
+
     def flatten(self, particle: Particle) -> None:
         pars = particle.Pars
         xs = [pars[dom.Name] for dom in self.Domain]
         particle['Xs'] = [pars[dom.Name] for dom in self.Domain]
 
         sim = particle.Sims
-        particle['Ys'] = [sim[k] for k in self.Data.items()]
+        particle['Ys'] = {k: sim[k] for k in self.Data.keys()}
 
     def print(self):
         print('Model: {}'.format(self.BayesianNetwork.Name))
@@ -106,6 +131,65 @@ class DataModel:
         print('Exogenous variables: {}'.format(', '.join(self.ExoParameters)))
 
 
-class AbsFitter:
-    pass
+IdleModel = DataModel(dict(), '''
+        PCore Empty {
+        }
+        ''')
 
+
+class Fitter(metaclass=ABCMeta):
+    def __init__(self, name_logger, **kwargs):
+        self.Monitor = Monitor(name_logger)
+        self.Settings = dict(self.DefaultSettings)
+        self.update_settings(**kwargs)
+        self.Collector = ParameterSet()
+        self.Model = IdleModel
+
+    def set_log_path(self, filename):
+        self.Monitor.set_log_path(filename=filename)
+
+    def attach(self, model):
+        self.Model = model
+
+    def close(self):
+        self.Model = IdleModel
+
+    def info(self, msg):
+        self.Monitor.info(msg)
+
+    def error(self, msg):
+        self.Monitor.info(msg)
+
+    @property
+    def DefaultSettings(self) -> dict:
+        return {
+            'n_collect': 1000,
+            'parallel': True,
+            'n_core': 4,
+            'verbose': 5
+        }
+
+    def update_settings(self, **kwargs):
+        for k, v in kwargs.items():
+            if k in self.Settings:
+                self.Settings[k] = v
+
+    def fit(self, model: DataModel, **kwargs):
+        self.attach(model)
+        self.Collector = ParameterSet()
+        self.update_settings(**kwargs)
+        self.initialise()
+        self.update()
+        self.collect()
+
+    @abstractmethod
+    def initialise(self):
+        pass
+
+    @abstractmethod
+    def update(self):
+        pass
+
+    @abstractmethod
+    def collect(self):
+        pass

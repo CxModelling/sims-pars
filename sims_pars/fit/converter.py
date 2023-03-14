@@ -2,7 +2,7 @@ import numpy as np
 from abc import ABCMeta, abstractmethod
 from sims_pars.fit.base import Domain
 
-__all__ = ['ConverterFF', 'ConverterIF', 'ConverterFI', 'ConverterII', 'get_converters']
+__all__ = ['ConverterFF', 'ConverterIF', 'ConverterFI', 'ConverterII', 'get_converter']
 
 
 class Converter(metaclass=ABCMeta):
