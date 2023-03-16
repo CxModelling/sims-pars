@@ -36,6 +36,19 @@ class Particle:
     def __getitem__(self, item):
         return self.Notes[item]
 
+    def to_json(self):
+        return {
+            'Pars': dict(self.Pars),
+            'Sims': dict(self.Sims),
+            'Notes': dict(self.Notes)
+        }
+
+    @staticmethod
+    def from_json(js):
+        p = Particle(js['Pars'], js['Sims'])
+        p.Notes.update(js['Notes'])
+        return p
+
 
 class DataModel(metaclass=ABCMeta):
     def __init__(self, data: dict[str, AbsData], bn: Union[BayesianNetwork, str, dict], exo=None):
