@@ -1,1 +1,1 @@
-from sims_pars.fit.abcom.alg import BayesHistoryMatching
+from sims_pars.fit.abcom.alg import ApproxBayesCom

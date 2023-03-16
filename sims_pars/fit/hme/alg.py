@@ -185,6 +185,7 @@ class BayesHistoryMatching(Fitter):
         for xs in xss:
             pars = {dom.Name: con.uniform2value(x) for dom, con, x in zip(model.Domain, cons, xs)}
             sim = model.simulate(pars)
+            model.flatten(sim)
             post.append(sim)
 
         bounds = [(dom.Name, con.uniform2value(lo), con.uniform2value(up)) for dom, con, lo, up in zip(model.Domain, cons, lower, upper)]

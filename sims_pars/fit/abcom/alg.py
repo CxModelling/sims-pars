@@ -109,6 +109,9 @@ class ApproxBayesCom(Fitter):
                 post.append(sim)
                 n_eval += ne
 
+        for pt in post.Particles:
+            self.Model.flatten(pt)
+
         post.keep('Eps', state.Eps)
         post.keep('Acceptance', n_collect / n_eval)
         post.keep('ESS', n_collect)
@@ -128,3 +131,5 @@ if __name__ == '__main__':
     print(po.Notes)
 
     print(po.to_df().describe())
+
+    print(po.to_pred_df())

@@ -22,7 +22,7 @@ class ParameterSet:
     def append(self, p):
         self.Particles.append(p)
 
-    def to_df(self):
+    def to_df(self, predictive=False):
         return pd.DataFrame([dict(pt.Pars) for pt in self.Particles])
 
     def to_json(self):
@@ -33,5 +33,5 @@ class ParameterSet:
             'Posterior': [dict(pt.Pars) for pt in self.Particles]
         }
 
-    def save_to_csv(self, file):
-        return self.to_df().to_csv(file)
+    def to_pred_df(self):
+        return pd.DataFrame([dict(pt['Ys']) for pt in self.Particles])

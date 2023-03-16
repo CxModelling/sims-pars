@@ -1,8 +1,8 @@
 from sims_pars.fitting.fitter import Fitter, ParameterSet
 from sims_pars.fitting.util import draw, draw_parallel, serve_and_evaluate, serve_and_evaluate_parallel
-from sims_pars.fitting.ga.cross import get_crossover
-from sims_pars.fitting.ga.select import get_selector
-from sims_pars.fitting.ga.mutate import get_mutator
+from fit.ga.cross import get_crossover
+from fit.ga.select import get_selector
+from fit.ga.mutate import get_mutator
 import numpy as np
 import numpy.random as rd
 from scipy.special import logsumexp

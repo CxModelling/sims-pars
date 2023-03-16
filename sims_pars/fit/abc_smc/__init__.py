@@ -1,2 +1,1 @@
-__author__ = 'Chu-Chang Ku'
-__all__ = []
+from sims_pars.fit.abc_smc.alg import ApproxBayesComSMC
