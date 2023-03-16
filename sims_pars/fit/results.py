@@ -1,6 +1,4 @@
 import pandas as pd
-from sims_pars.bayesnet.chromosome import Chromosome
-
 
 __all__ = ['ParameterSet']
 
@@ -10,31 +8,30 @@ class ParameterSet:
         self.Algorithm = alg
         self.Settings = dict()
         self.Notes = dict()
-        self.ParameterList = list()
-        self.DF = pd.DataFrame()
+        self.Particles = list()
 
     def __getitem__(self, item):
         return self.Notes[item]
 
     def __len__(self):
-        return len(self.ParameterList)
+        return len(self.Particles)
 
     def keep(self, k, note):
         self.Notes[k] = note
 
     def append(self, p):
-        self.ParameterList.append(p)
+        self.Particles.append(p)
 
-    def finish(self):
-        self.DF = Chromosome.to_data_frame(self.ParameterList)
+    def to_df(self):
+        return pd.DataFrame([dict(pt.Pars) for pt in self.Particles])
 
     def to_json(self):
         return {
             'Algorithm': self.Algorithm,
             'Settings': dict(self.Settings),
             'Notes': dict(self.Notes),
-            'Posterior': [pars.to_data() for pars in self.ParameterList]
+            'Posterior': [dict(pt.Pars) for pt in self.Particles]
         }
 
     def save_to_csv(self, file):
-        return self.DF.to_csv(file)
+        return self.to_df().to_csv(file)

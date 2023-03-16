@@ -8,7 +8,7 @@ from sims_pars.bayesnet import BayesianNetwork, Chromosome, bayes_net_from_json,
 from typing import Union
 
 __author__ = 'Chu-Chang Ku'
-__all__ = ['Particle', 'Domain', 'DataModel']
+__all__ = ['Particle', 'Domain', 'DataModel', 'Fitter']
 
 
 class Domain:
@@ -37,7 +37,7 @@ class Particle:
         return self.Notes[item]
 
 
-class DataModel:
+class DataModel(metaclass=ABCMeta):
     def __init__(self, data: dict[str, AbsData], bn: Union[BayesianNetwork, str, dict], exo=None):
         self.ExoParameters = dict(exo) if exo is not None else dict()
         self.FreeParameters = dict()
@@ -90,8 +90,9 @@ class DataModel:
             p.LogPrior = evaluate_nodes(self.BayesianNetwork, p)
         return p.LogPrior
 
+    @abstractmethod
     def simulate(self, pars) -> Particle:
-        return Particle(pars, pars)
+        pass
 
     def calc_distance(self, particle: Particle) -> float:
         try:
@@ -119,7 +120,6 @@ class DataModel:
 
     def flatten(self, particle: Particle) -> None:
         pars = particle.Pars
-        xs = [pars[dom.Name] for dom in self.Domain]
         particle['Xs'] = [pars[dom.Name] for dom in self.Domain]
 
         sim = particle.Sims
@@ -131,10 +131,15 @@ class DataModel:
         print('Exogenous variables: {}'.format(', '.join(self.ExoParameters)))
 
 
-IdleModel = DataModel(dict(), '''
-        PCore Empty {
+class IdleModel(DataModel):
+    def __init__(self):
+        DataModel.__init__(self, {}, bayes_net_from_script('''
+                PCore Empty {
         }
-        ''')
+        '''))
+
+    def simulate(self, pars) -> Particle:
+        return Particle({}, {})
 
 
 class Fitter(metaclass=ABCMeta):
@@ -143,7 +148,8 @@ class Fitter(metaclass=ABCMeta):
         self.Settings = dict(self.DefaultSettings)
         self.update_settings(**kwargs)
         self.Collector = ParameterSet()
-        self.Model = IdleModel
+        self.Model = IdleModel()
+        self.State = None
 
     def set_log_path(self, filename):
         self.Monitor.set_log_path(filename=filename)
@@ -152,7 +158,7 @@ class Fitter(metaclass=ABCMeta):
         self.Model = model
 
     def close(self):
-        self.Model = IdleModel
+        self.Model = IdleModel()
 
     def info(self, msg):
         self.Monitor.info(msg)
@@ -163,7 +169,6 @@ class Fitter(metaclass=ABCMeta):
     @property
     def DefaultSettings(self) -> dict:
         return {
-            'n_collect': 1000,
             'parallel': True,
             'n_core': 4,
             'verbose': 5
@@ -180,7 +185,7 @@ class Fitter(metaclass=ABCMeta):
         self.update_settings(**kwargs)
         self.initialise()
         self.update()
-        self.collect()
+        self.terminate()
 
     @abstractmethod
     def initialise(self):
@@ -191,5 +196,9 @@ class Fitter(metaclass=ABCMeta):
         pass
 
     @abstractmethod
-    def collect(self):
+    def terminate(self):
+        pass
+
+    @abstractmethod
+    def sample_posteriors(self, n_collect=300) -> ParameterSet:
         pass
