@@ -306,9 +306,9 @@ class ApproxBayesComSMC(Fitter):
 
 
 if __name__ == '__main__':
-    from sims_pars.fit.toys import get_betabin
+    from sims_pars.fit.toys import get_sir
 
-    m0 = get_betabin([8, 8])
+    m0 = get_sir(be=1.5, ga=0.2)
 
     alg = ApproxBayesComSMC(n_iter=300, max_round=40, parallel=True)
     alg.fit(m0)

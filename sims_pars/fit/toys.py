@@ -2,21 +2,23 @@ from sims_pars.fit.targets import read_targets
 from sims_pars.fit.base import DataModel, Particle
 from sims_pars import bayes_net_from_script, sample
 import scipy.stats as sts
+import numpy as np
+from scipy.integrate import solve_ivp
 
-__all__ = ['get_betabin', 'get_normal2']
+__all__ = ['get_betabin', 'get_normal2', 'get_sir']
 
 
 class BetaBin(DataModel):
     def __init__(self, data):
         scr = '''
-                    PCore BetaBin {
-                        al = 1
-                        be = 1
+PCore BetaBin {
+    al = 1
+    be = 1
 
-                        p1 ~ beta(al, be)
-                        p2 ~ beta(al, be)
-                    }
-                    '''
+    p1 ~ beta(al, be)
+    p2 ~ beta(al, be)
+}
+'''
         bn = bayes_net_from_script(scr)
         dat = read_targets({
             'x1': data[0],
@@ -70,6 +72,53 @@ def get_normal2(mu, n=10):
     return Normal2(mu, n=n)
 
 
+class EpiSIR(DataModel):
+    def __init__(self, be=1.5, ga=0.2):
+        scr = '''
+PCore SIR {
+    gamma ~ unif(0.1, 1)
+    beta ~ unif(1, 20)
+}
+'''
+        bn = bayes_net_from_script(scr)
+        dat = EpiSIR.solve({'beta': be, 'gamma': ga})
+        dat = read_targets(dat, error=0.05)
+        DataModel.__init__(self, dat, bn)
+
+    def simulate(self, pars) -> Particle:
+        return Particle(pars, EpiSIR.solve(pars))
+
+    @staticmethod
+    def solve(p):
+        def sir(t, y, p):
+            be, ga = p['beta'], p['gamma']
+            s, i, r = y
+            n = y.sum()
+            return np.array([
+                - be * s * i / n,
+                be * s * i / n - ga * i,
+                ga * i
+            ])
+
+        ys = solve_ivp(sir, [0, 10], y0=[990, 10, 0], args=(p,), t_eval=np.linspace(2, 7, 6))
+
+        dat = dict()
+
+        for t, y in zip(ys.t, ys.y.T):
+            s, i, _ = y
+            n = y.sum()
+
+            dat[f'Inc_{t:.0f}'] = p['beta'] * s * i / n / n
+            dat[f'Prev_{t:.0f}'] = i / n
+            dat[f'Rec_{t:.0f}'] = p['gamma'] * i / n
+
+        return dat
+
+
+def get_sir(be, ga):
+    return EpiSIR(be, ga)
+
+
 if __name__ == '__main__':
     bb = get_betabin()
 
@@ -85,3 +134,11 @@ if __name__ == '__main__':
     s1 = n2.simulate(p1)
     print(s1)
     print(n2.calc_distance(s1))
+
+    n3 = get_sir(1.5, 0.2)
+
+    p3 = n3.sample_prior()
+    print(p3)
+    s3 = n3.simulate(p1)
+    print(s3)
+    print(n3.calc_distance(s3))

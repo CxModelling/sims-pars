@@ -35,10 +35,10 @@ class Matchers:
         for k, d in self.Data.items():
             e, v_o = d.ev()
             y, v_e = pt['Ys'][k], pt['Vs'][k]
-            imp = np.power(e - y, 2) / np.sqrt(self.VarModel + v_o + v_e)
+            imp = np.abs(e - y) / np.sqrt(self.VarModel + v_o + v_e)
             ims.append(float(imp))
 
-        return np.mean(ims)
+        return np.max(ims)
 
     def eval_mse(self, pts: list[Particle]):
         residuals = [np.mean([np.power(pt['Ys'][k] - v.Value, 2) for k, v in self.Data.items()]) for pt in pts]
@@ -203,7 +203,7 @@ class BayesHistoryMatching(Fitter):
 if __name__ == '__main__':
     from sims_pars.fit.toys import get_betabin
 
-    m0 = get_betabin([4, 8])
+    m0 = get_betabin([4, 12])
 
     alg = BayesHistoryMatching(max_wave=3)
     alg.fit(m0)
