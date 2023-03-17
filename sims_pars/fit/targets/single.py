@@ -1,5 +1,6 @@
 from sims_pars.fit.targets.base import AbsData
 from abc import ABCMeta
+import numpy as np
 
 __author__ = 'Chu-Chang Ku'
 __all__ = ['AbsSingleData', 'DataPointError', 'DataPointRange', 'DataDistribution']
@@ -19,7 +20,7 @@ class DataPointError(AbsSingleData):
         return self.Std ** 2
 
     def calc_distance(self, sim) -> float:
-        return (sim[self.Name] - self.Value) / self.Std
+        return np.power(sim[self.Name] - self.Value, 2) / self.Std
 
     def calc_likelihood(self, sim) -> float:
         raise AttributeError('Undefined data distribution')
@@ -40,7 +41,7 @@ class DataPointRange(AbsSingleData):
         return (self.Range / 2 / 1.96) ** 2
 
     def calc_distance(self, sim) -> float:
-        return (sim[self.Name] - self.Value) / self.Range * (2 * 1.96)
+        return np.power(sim[self.Name] - self.Value, 2) / self.Range * (2 * 1.96)
 
     def calc_likelihood(self, sim) -> float:
         raise AttributeError('Undefined data distribution')

@@ -120,7 +120,7 @@ class ApproxBayesCom(Fitter):
 
 
 if __name__ == '__main__':
-    from sims_pars.fit.cases import get_betabin
+    from sims_pars.fit.toys import get_betabin
 
     m0 = get_betabin([4, 4])
 

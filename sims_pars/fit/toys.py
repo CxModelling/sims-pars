@@ -15,9 +15,6 @@ class BetaBin(DataModel):
 
                         p1 ~ beta(al, be)
                         p2 ~ beta(al, be)
-
-                        x1 ~ binom(10, p1)
-                        x2 ~ binom(20, p2) 
                     }
                     '''
         bn = bayes_net_from_script(scr)

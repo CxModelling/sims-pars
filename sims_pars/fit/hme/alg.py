@@ -5,6 +5,7 @@ from sims_pars.fit.hme.emulator import GPREmulator
 import numpy as np
 import numpy.random as rd
 from scipy.stats.qmc import LatinHypercube
+import tqdm
 
 __author__ = 'Chu-Chang Ku'
 __all__ = ['BayesHistoryMatching']
@@ -61,6 +62,7 @@ class BayesHistoryMatching(Fitter):
         }
 
     def initialise(self):
+        self.info('Initialising')
         model = self.Model
         self.Settings['n_pars'] = n_pars = len(model.Domain)
 
@@ -78,7 +80,6 @@ class BayesHistoryMatching(Fitter):
         matchers = Matchers(v_m, model.Data)
 
         self.State = StateHME(emulators, converters, matchers, [], bnd)
-        self.info('Initialised')
 
     def update(self):
         while True:
@@ -112,7 +113,7 @@ class BayesHistoryMatching(Fitter):
         xss = lower + xss * (upper - lower)
         pts_sim = list()
 
-        for xs in xss:
+        for xs in tqdm.tqdm(xss, desc='Simulation'):
             pars = {dom.Name: con.uniform2value(x) for dom, con, x in zip(model.Domain, cons, xs)}
             sim = model.simulate(pars)
             model.flatten(sim)
@@ -127,6 +128,7 @@ class BayesHistoryMatching(Fitter):
         xss = [pt.Notes['Xs'] for pt in pts_sim]
         yss = [pt.Notes['Ys'] for pt in pts_sim]
 
+        self.info('Train emulators')
         for emu in emulators.values():
             emu.train(xss, yss)
         lower, upper = state.Bounds
@@ -135,7 +137,7 @@ class BayesHistoryMatching(Fitter):
 
         pts_emu = list()
 
-        for i in range(n_ems):
+        for i in tqdm.tqdm(range(n_ems), desc='Emulation'):
             xs = xss[i]
             pars = {dom.Name: con.uniform2value(x) for dom, con, x in zip(model.Domain, cons, xs)}
             sims = {k: ys[0][i] for k, ys in yss.items()}
@@ -161,10 +163,10 @@ class BayesHistoryMatching(Fitter):
 
     def _check_termination(self):
         if self.Settings['max_wave'] <= self.State.Wave:
+            self.info('Termination, max. wave reached')
             return True
         # if self.Settings['cutoff'] < self.State.CutOff:
         #     return False
-
         return False
 
     def terminate(self):
@@ -199,7 +201,7 @@ class BayesHistoryMatching(Fitter):
 
 
 if __name__ == '__main__':
-    from sims_pars.fit.cases import get_betabin
+    from sims_pars.fit.toys import get_betabin
 
     m0 = get_betabin([4, 8])
 

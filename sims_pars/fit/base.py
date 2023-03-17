@@ -43,6 +43,15 @@ class Particle:
             'Notes': dict(self.Notes)
         }
 
+    def copy(self):
+        pt = Particle(dict(self.Pars), self.Sims)
+        if 'Xs' in self.Notes:
+            pt['Xs'] = self.Notes['Xs']
+
+        if 'Ys' in self.Notes:
+            pt['Ys'] = self.Notes['Ys']
+        return pt
+
     @staticmethod
     def from_json(js):
         p = Particle(js['Pars'], js['Sims'])
@@ -108,6 +117,9 @@ class DataModel(metaclass=ABCMeta):
         pass
 
     def calc_distance(self, particle: Particle) -> float:
+        if 'distance' in particle.Notes:
+            return particle['distance']
+
         try:
             ys = particle['Ys']
         except KeyError:
@@ -117,9 +129,14 @@ class DataModel(metaclass=ABCMeta):
         di = 0
         for k, dat in self.Data.items():
             di += dat.calc_distance(ys)
+
+        particle['distance'] = di
         return di
 
     def calc_likelihood(self, particle: Particle) -> float:
+        if 'log_lik' in particle.Notes:
+            return particle['log_lik']
+
         try:
             ys = particle['Ys']
         except KeyError:
@@ -129,6 +146,8 @@ class DataModel(metaclass=ABCMeta):
         li = 0
         for k, dat in self.Data.items():
             li += dat.calc_likelihood(ys)
+
+        particle['log_lik'] = li
         return li
 
     def flatten(self, particle: Particle) -> None:
