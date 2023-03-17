@@ -1,10 +1,16 @@
 version:                "3"
 services:
-  sp:
+  spd:
       image:            sims-pars-dev:latest
       volumes:
         - ./notebooks:/home/jovyan/work
         - ./sims_pars:/home/jovyan/work/sims_pars
       ports:
         - 8888:8888
-      container_name:   sims-pars-test
+      container_name: sp_test
+
+  sp:
+    image: sims-pars:latest
+    ports:
+      - 8787:8888
+    container_name: sp_build
