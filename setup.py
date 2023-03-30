@@ -17,11 +17,8 @@ packages = [
     'sims_pars',
     'sims_pars.factory',
     'sims_pars.bayesnet',
-    # 'sims_pars.bayesnet.reg',
-    # 'sims_pars.data',
     'sims_pars.simulation',
-    'sims_pars.fitting',
-    'sims_pars.fitting.ga'
+    'sims_pars.fit'
 ]
 
 
@@ -41,7 +38,7 @@ extras_require = {
 
 setuptools.setup(
     name='sims-pars',
-    version='2.2.1',
+    version='2.5.1',
     author="Chu-Chang Ku",
     author_email='TimeWz667@gmail.com',
     description='Serving stochastic parameters to simulation models',

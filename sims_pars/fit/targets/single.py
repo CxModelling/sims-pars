@@ -35,7 +35,7 @@ class DataPointRange(AbsSingleData):
     def __init__(self, name, m, l, u):
         AbsSingleData.__init__(self, name, m)
         self.Lower, self.Upper = l, u
-        self.Range = l - u
+        self.Range = u - l
 
     def get_var_obs(self):
         return (self.Range / 2 / 1.96) ** 2
