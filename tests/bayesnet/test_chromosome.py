@@ -7,14 +7,8 @@ __author__ = 'TimeWz667'
 class ChromosomeTest(unittest.TestCase):
     def test_chr(self):
         cms = Chromosome({'A': 1}, -5)
-        self.assertTrue(cms.is_prior_evaluated())
-        self.assertFalse(cms.is_likelihood_evaluated())
-        self.assertFalse(cms.is_evaluated())
+        self.assertTrue(cms.is_evaluated())
         self.assertEqual(cms['A'], 1)
-
-        cms.LogLikelihood = 3
-        self.assertTrue(cms.is_likelihood_evaluated())
-        self.assertEqual(cms.LogPosterior, -2)
 
     def test_impact(self):
         bn = BayesianNetwork('Test')
@@ -28,10 +22,9 @@ class ChromosomeTest(unittest.TestCase):
 
     def test_clone(self):
         cms = Chromosome({'A': 1}, -5)
-        cms.LogLikelihood = 3
 
         cms_copy = cms.clone()
-        self.assertEqual(cms_copy.LogPosterior, -2)
+        self.assertEqual(cms_copy.LogProb, -5)
 
     def test_impulse_clone(self):
         bn = BayesianNetwork('Test')

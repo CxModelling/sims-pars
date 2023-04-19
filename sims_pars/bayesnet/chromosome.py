@@ -6,10 +6,9 @@ __all__ = ['Chromosome']
 
 
 class Chromosome:
-    def __init__(self, vs=None, prior=np.NaN):
+    def __init__(self, vs=None, prob=np.NaN):
         self.Locus = dict(vs) if vs else dict()
-        self.LogPrior = prior
-        self.LogLikelihood = np.NaN
+        self.LogProb = prob
 
     def __len__(self):
         return len(self.Locus)
@@ -67,22 +66,14 @@ class Chromosome:
                 self.reset_probability()
 
     def clone(self):
-        g = Chromosome(self.Locus, self.LogPrior)
-        g.LogLikelihood = self.LogLikelihood
+        g = Chromosome(self.Locus, self.LogProb)
         return g
 
     def reset_probability(self):
-        self.LogLikelihood = np.NaN
-        self.LogPrior = np.NaN
-
-    def is_prior_evaluated(self):
-        return not np.isnan(self.LogPrior)
-
-    def is_likelihood_evaluated(self):
-        return not np.isnan(self.LogLikelihood)
+        self.LogProb = np.NaN
 
     def is_evaluated(self):
-        return self.is_prior_evaluated() and self.is_likelihood_evaluated()
+        return not np.isnan(self.LogProb)
 
     def __repr__(self):
         if not self.Locus:
@@ -96,24 +87,14 @@ class Chromosome:
     def to_json(self):
         return {
             'Locus': self.Locus,
-            'LogPrior': self.LogPrior,
-            'LogLikelihood': self.LogLikelihood
+            'LogProb': self.LogProb
         }
 
     def to_data(self):
         vs = dict(self.Locus)
-        if self.is_prior_evaluated():
-            vs['LogPrior'] = self.LogPrior
-        if self.is_likelihood_evaluated():
-            vs['LogLikelihood'] = self.LogLikelihood
         if self.is_evaluated():
-            vs['LogPosterior'] = self.LogPosterior
-
+            vs['LogProb'] = self.LogProb
         return vs
-
-    @property
-    def LogPosterior(self):
-        return self.LogPrior + self.LogLikelihood
 
     @staticmethod
     def summarise(genes):
