@@ -1,6 +1,6 @@
 import numpy as np
 from abc import ABCMeta, abstractmethod
-from sims_pars.fn import evaluate_nodes, sample
+from sims_pars.fn import evaluate_nodes, sample, sample_chromosome
 from sims_pars.monitor import Monitor
 from sims_pars.fit.targets import AbsData
 from sims_pars.fit.results import ParameterSet
@@ -38,13 +38,13 @@ class Particle:
 
     def to_json(self):
         return {
-            'Pars': dict(self.Pars),
+            'Pars': self.Pars.to_json(),
             'Sims': dict(self.Sims),
             'Notes': dict(self.Notes)
         }
 
     def copy(self):
-        pt = Particle(dict(self.Pars), self.Sims)
+        pt = Particle(self.Pars.clone(), self.Sims)
         if 'Xs' in self.Notes:
             pt['Xs'] = self.Notes['Xs']
 
@@ -54,7 +54,7 @@ class Particle:
 
     @staticmethod
     def from_json(js):
-        p = Particle(js['Pars'], js['Sims'])
+        p = Particle(Chromosome.from_json(js['Pars']), js['Sims'])
         p.Notes.update(js['Notes'])
         return p
 
@@ -81,30 +81,28 @@ class DataModel(metaclass=ABCMeta):
     def serve(self, p: dict):
         p = dict(p)
         p.update(self.ExoParameters)
-        pars = Chromosome(sample(self.BayesianNetwork, p))
-        self.evaluate_prior(pars)
-        return pars
+        p = sample_chromosome(self.BayesianNetwork, p)
+        return p
 
     @property
     def Domain(self):
         p = self.sample_prior()
         res = []
-        for node in self.FreeParameters:
+        for node in self.BayesianNetwork.RVRoots:
             d = self.BayesianNetwork[node].get_distribution(p)
             res.append(Domain(name=node, tp=d.Type, upper=d.Upper, lower=d.Lower, loc=d.mean(), scale=d.std()))
         return res
 
     def serve_from_json(self, js: dict):
         p = self.serve(js['Locus'])
-        p.LogPrior, p.LogLikelihood = js['LogPrior'], js['LogLikelihood']
+        p.LogProb = js['LogProb']
         return p
 
     def sample_prior(self):
-        pars = sample(self.BayesianNetwork, self.ExoParameters)
-        pars.update(self.ExoParameters)
-        pars = Chromosome(pars)
-        self.evaluate_prior(pars)
-        return pars
+        p = sample(self.BayesianNetwork, self.ExoParameters)
+        lp = evaluate_nodes(self.BayesianNetwork, p)
+        p = Chromosome(p, lp)
+        return p
 
     def evaluate_prior(self, p: Chromosome):
         if not p.is_evaluated():

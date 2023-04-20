@@ -1,8 +1,8 @@
 import numpy as np
-from sims_pars.bayesnet import BayesianNetwork, get_sufficient_nodes
+from sims_pars.bayesnet import BayesianNetwork, get_sufficient_nodes, Chromosome
 
 __author__ = 'TimeWz667'
-__all__ = ['sample', 'sample_minimally', 'evaluate_nodes']
+__all__ = ['sample', 'sample_minimally', 'evaluate_nodes', 'sample_chromosome']
 
 
 def sample(bn, cond=None):
@@ -73,3 +73,10 @@ def evaluate_nodes(bn, pars):
     if np.isnan(lps):
         lps = - np.Inf
     return lps
+
+
+def sample_chromosome(bn, cond=None):
+    p = sample(bn, cond=cond)
+    lp = evaluate_nodes(bn, p)
+    ch = Chromosome(p, lp)
+    return ch

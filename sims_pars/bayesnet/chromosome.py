@@ -97,6 +97,10 @@ class Chromosome:
         return vs
 
     @staticmethod
+    def from_json(js):
+        return Chromosome(js['Locus'], js['LogProb'])
+
+    @staticmethod
     def summarise(genes):
         df = pd.DataFrame([gene.Locus for gene in genes])
         return df.describe()

@@ -57,7 +57,7 @@ class Monitor:
         self.Records.append(self.Last)
         self.Time = time
         self.Last = dict()
-        self.Logger.info('Step to {}'.format(self.Time))
+        # self.Logger.info('Step to {}'.format(self.Time))
 
     def keep(self, **kwargs):
         self.Last.update(kwargs)

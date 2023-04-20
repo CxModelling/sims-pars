@@ -49,13 +49,13 @@ def sample_ess(model, eps, unpack=False):
 
 def mutate(p0, steps):
     sizes = {k: np.random.normal(0, v) for k, v in steps.items()}
-    return {k: v + sizes[k] for k, v in p0.items() if k in steps}
+    return {k: p0[k] + size for k, size in sizes.items()}
 
 
 def sample_mutation(model, pt0, steps, unpack=False):
     di = np.Inf
     n_eval = 0
-    p0 = pt0.Pars
+    p0 = pt0.Pars if isinstance(pt0, Particle) else pt0['Pars']['Locus']
     while np.isinf(di):
         p1 = mutate(p0, steps)
         p1 = model.serve(p1)
@@ -202,10 +202,9 @@ class ApproxBayesComSMC(Fitter):
     def mcmc_proposal(self, theta1, wts, eps1):
         n_iter = self.Settings['n_iter']
         tau = self.calc_weighted_std(theta1, wts)
-
         if self.Settings['parallel']:
             with Parallel(n_jobs=self.Settings['n_core'], verbose=self.Settings['verbose']) as parallel:
-                sample_p = parallel(delayed(sample_mutation)(self.Model, pt, tau, unpack=True) for pt in theta1)
+                sample_p = parallel(delayed(sample_mutation)(self.Model, pt.to_json(), tau, unpack=True) for pt in theta1)
             sample_p = [(di, Particle.from_json(sim), i) for di, sim, i in sample_p]
         else:
             sample_p = [sample_mutation(self.Model, pt, tau) for pt in tqdm(theta1)]
@@ -282,7 +281,7 @@ class ApproxBayesComSMC(Fitter):
 
         if self.Settings['parallel']:
             with Parallel(n_jobs=self.Settings['n_core'], verbose=self.Settings['verbose']) as parallel:
-                sample_p = parallel(delayed(sample_mutation)(self.Model, pt, tau, unpack=True) for pt in theta1)
+                sample_p = parallel(delayed(sample_mutation)(self.Model, pt.to_json(), tau, unpack=True) for pt in theta1)
             sample_p = [(di, Particle.from_json(sim), i) for di, sim, i in sample_p]
 
         else:
@@ -310,7 +309,7 @@ if __name__ == '__main__':
 
     m0 = get_sir(be=1.5, ga=0.2)
 
-    alg = ApproxBayesComSMC(n_iter=300, max_round=40, parallel=True)
+    alg = ApproxBayesComSMC(n_iter=300, max_round=30, parallel=True, verbose=False)
     alg.fit(m0)
 
     po = alg.sample_posteriors(1000)
