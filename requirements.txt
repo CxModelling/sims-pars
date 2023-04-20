@@ -7,4 +7,5 @@ pandas>=1.1.3
 setuptools>=51.0.0
 tqdm>=4.56.0
 pydantic>=1.8.2
+matplotlib
 gpflow>=2.5.2

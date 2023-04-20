@@ -20,6 +20,18 @@ class BayesNetTest(unittest.TestCase):
         }
         ''')
 
+    def test_rvroots(self):
+        bn = dag.bayes_net_from_script('''
+        PCore C {
+            A = 2
+            B ~ beta(3, A)
+            C ~ binom(prob=B, size=5)
+            D ~ unif(0, 1)
+        }
+        
+        ''')
+        self.assertCountEqual(bn.RVRoots, ['D', 'B'])
+
     def test_merge(self):
         bn3 = self.BN1.merge('B3', self.BN2)
         self.assertNotIn('B2', bn3)

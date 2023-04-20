@@ -14,6 +14,7 @@ __all__ = ['AbsDistribution',
            'SpInteger',
            'DistributionCentre',
            'parse_distribution',
+           'complete_function',
            'CategoricalRV']
 
 

@@ -59,7 +59,7 @@ def sample_mutation(model, pt0, steps, unpack=False):
     while np.isinf(di):
         p1 = mutate(p0, steps)
         p1 = model.serve(p1)
-        if np.isinf(p1.LogPrior):
+        if np.isinf(p1.LogProb):
             continue
 
         n_eval += 1

@@ -1,6 +1,11 @@
 from abc import ABCMeta, abstractmethod
-import gpflow
 import numpy as np
+
+import warnings
+warnings.simplefilter("ignore", UserWarning)
+from gpflow.kernels import RBF
+from gpflow.models import GPR
+from gpflow.optimizers import Scipy
 
 __all__ = ['AbsEmulator', 'GPREmulator']
 
@@ -9,7 +14,7 @@ class AbsEmulator(metaclass=ABCMeta):
     def __init__(self, output, kernel=None, **kwargs):
         self.Output = output
         if kernel is None:
-            self.Kernel = gpflow.kernels.RBF()
+            self.Kernel = RBF()
         else:
             self.Kernel = kernel
         self.Opt = dict(kwargs)
@@ -28,8 +33,8 @@ class GPREmulator(AbsEmulator):
     def train(self, xs, ys):
         xs = np.array(xs)
         ys = np.array([[y[self.Output]] for y in ys], dtype=float)
-        self.GP = gpflow.models.GPR(data=(xs, ys), kernel=self.Kernel)
-        opt = gpflow.optimizers.Scipy()
+        self.GP = GPR(data=(xs, ys), kernel=self.Kernel)
+        opt = Scipy()
         opt.minimize(self.GP.training_loss, self.GP.trainable_variables, options=self.Opt)
 
     def predict(self, xs) -> tuple[list, list]:
@@ -41,7 +46,7 @@ class GPREmulator(AbsEmulator):
 
 
 if __name__ == '__main__':
-    import matplotlib.pyplot as plt
+    import pandas as pd
 
     X = np.array(
         [
@@ -56,37 +61,32 @@ if __name__ == '__main__':
         ]
     )
 
-    plt.plot(X, Y, "kx", mew=2)
-
-    model = gpflow.models.GPR(
+    model = GPR(
         (X, Y),
-        kernel=gpflow.kernels.RBF(), mean_function=None
+        kernel=RBF(), mean_function=None
     )
 
-    opt = gpflow.optimizers.Scipy()
+    opt = Scipy()
     opt.minimize(model.training_loss, model.trainable_variables, options=dict())
 
-    Xplot = np.linspace(-0.1, 1.1, 100)[:, None]
+    Xplot = np.linspace(-0.1, 1.1, 10)[:, None]
 
     f_mean, f_var = model.predict_f(Xplot, full_cov=False)
     y_mean, y_var = model.predict_y(Xplot)
+
+    f_mean, f_var = f_mean.numpy(), f_var.numpy()
+    y_mean, y_var = y_mean.numpy(), y_var.numpy()
 
     f_lower = f_mean - 1.96 * np.sqrt(f_var)
     f_upper = f_mean + 1.96 * np.sqrt(f_var)
     y_lower = y_mean - 1.96 * np.sqrt(y_var)
     y_upper = y_mean + 1.96 * np.sqrt(y_var)
 
-    plt.plot(X, Y, "kx", mew=2, label="input data")
-    plt.plot(Xplot, f_mean, "-", color="C0", label="mean")
-    plt.plot(Xplot, f_lower, "--", color="C0", label="f 95% confidence")
-    plt.plot(Xplot, f_upper, "--", color="C0")
-    plt.fill_between(
-        Xplot[:, 0], f_lower[:, 0], f_upper[:, 0], color="C0", alpha=0.1
-    )
-    plt.plot(Xplot, y_lower, ".", color="C0", label="Y 95% confidence")
-    plt.plot(Xplot, y_upper, ".", color="C0")
-    plt.fill_between(
-        Xplot[:, 0], y_lower[:, 0], y_upper[:, 0], color="C0", alpha=0.1
-    )
-    plt.legend()
-    plt.show()
+    print(f_mean, f_var)
+    dat = pd.DataFrame({
+        'f_lower': f_lower.reshape(-1),
+        'f_upper': f_upper.reshape(-1),
+        'y_lower': y_lower.reshape(-1),
+        'y_upper': y_upper.reshape(-1)
+    })
+    print(dat)

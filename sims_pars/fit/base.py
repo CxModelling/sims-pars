@@ -69,11 +69,10 @@ class DataModel(metaclass=ABCMeta):
         elif isinstance(bn, dict):
             bn = bayes_net_from_json(bn)
 
-        self.FreeParameters = [node for node in bn.Order if bn.is_rv(node) and node not in self.ExoParameters]
+        self.FreeParameters = [node for node in bn.RVRoots if node not in self.ExoParameters]
         self.BayesianNetwork = bn
 
         # Exclude non-float
-        # todo
         p0 = self.sample_prior()
         pfs = [k for k, v in dict(p0).items() if isinstance(v, float)]
         self.FreeParameters = [node for node in self.FreeParameters if node in pfs]
@@ -108,9 +107,9 @@ class DataModel(metaclass=ABCMeta):
         return pars
 
     def evaluate_prior(self, p: Chromosome):
-        if not p.is_prior_evaluated():
-            p.LogPrior = evaluate_nodes(self.BayesianNetwork, p)
-        return p.LogPrior
+        if not p.is_evaluated():
+            p.LogProb = evaluate_nodes(self.BayesianNetwork, p)
+        return p.LogProb
 
     @abstractmethod
     def simulate(self, pars) -> Particle:

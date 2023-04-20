@@ -14,4 +14,4 @@ RUN mamba install --quiet --yes \
     'joblib>=1.0.1' && \
     mamba clean --all -f -y && \
     fix-permissions "${CONDA_DIR}" && \
-    fix-permissions "/home/${NB_USER}"
+    fix-permissions "/home/${NB_USER}" \

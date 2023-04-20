@@ -1,7 +1,6 @@
 from sims_pars.fit.converter import *
 from sims_pars.fit.base import *
 from sims_pars.fit.results import ParameterSet
-from sims_pars.fit.hme.emulator import GPREmulator
 import numpy as np
 import numpy.random as rd
 from scipy.stats.qmc import LatinHypercube
@@ -62,6 +61,8 @@ class BayesHistoryMatching(Fitter):
         }
 
     def initialise(self):
+        from sims_pars.fit.hme.emulator import GPREmulator
+
         self.info('Initialising')
         model = self.Model
         self.Settings['n_pars'] = n_pars = len(model.Domain)

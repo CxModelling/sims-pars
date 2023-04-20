@@ -1,8 +1,6 @@
 from abc import ABCMeta, abstractmethod
 import re
-
 import numpy as np
-
 from sims_pars.util import *
 from sims_pars.prob import parse_distribution, complete_function
 from pydantic import ValidationError
