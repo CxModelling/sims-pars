@@ -34,6 +34,20 @@ def sample_fin(model, unpack=False):
     return di, sim, n_eval
 
 
+def sample_fin_cont(model, p0, unpack=False):
+    di = np.Inf
+    n_eval = 0
+    while np.isinf(di):
+        n_eval += 1
+        p = model.sample_prior()
+        p.impulse(p0, model.BayesianNetwork)
+        sim = model.simulate(p)
+        di = model.calc_distance(sim)
+
+    sim = sim.to_json() if unpack else sim
+    return di, sim, n_eval
+
+
 def sample_ess(model, eps, unpack=False):
     di = np.Inf
     n_eval = 0
@@ -86,6 +100,7 @@ def test(pts):
 class ApproxBayesComSMC(Fitter):
     def __init__(self, **kwargs):
         Fitter.__init__(self, 'ApproxBayesComSMC', **kwargs)
+        self.__pars0 = None
 
     @property
     def DefaultSettings(self) -> dict:
@@ -101,17 +116,30 @@ class ApproxBayesComSMC(Fitter):
             'verbose': 5
         }
 
+    def set_parents(self, ps0: list):
+        self.__pars0 = ps0
+
     def initialise(self):
         self.info("Initialising")
 
         n_sim = self.Settings['n_iter']
 
-        if self.Settings['parallel']:
-            with Parallel(n_jobs=self.Settings['n_core'], verbose=self.Settings['verbose']) as parallel:
-                samples = parallel(delayed(sample_fin)(self.Model, unpack=True) for _ in range(n_sim))
+        if self.__pars0 is not None:
+            p0s = rd.choice(self.__pars0, n_sim)
+
+            if self.Settings['parallel']:
+                with Parallel(n_jobs=self.Settings['n_core'], verbose=self.Settings['verbose']) as parallel:
+                    samples = parallel(delayed(sample_fin_cont)(self.Model, p0, unpack=True) for p0 in p0s)
                 samples = [(di, Particle.from_json(sim), ne) for di, sim, ne in samples]
+            else:
+                samples = [sample_fin_cont(self.Model, p0) for p0 in tqdm(p0s)]
         else:
-            samples = [sample_fin(self.Model) for _ in tqdm(range(n_sim))]
+            if self.Settings['parallel']:
+                with Parallel(n_jobs=self.Settings['n_core'], verbose=self.Settings['verbose']) as parallel:
+                    samples = parallel(delayed(sample_fin)(self.Model, unpack=True) for _ in range(n_sim))
+                samples = [(di, Particle.from_json(sim), ne) for di, sim, ne in samples]
+            else:
+                samples = [sample_fin(self.Model) for _ in tqdm(range(n_sim))]
 
         pts = [pt for _, pt, _ in samples]
         wts = np.ones(n_sim) / n_sim
@@ -309,9 +337,14 @@ if __name__ == '__main__':
 
     m0 = get_sir(be=1.5, ga=0.2)
 
-    alg = ApproxBayesComSMC(n_iter=300, max_round=30, parallel=True, verbose=False)
+    alg = ApproxBayesComSMC(n_iter=300, max_round=10, parallel=True, verbose=False)
+    p0s = [{'beta': rd.uniform(1, 2)} for _ in range(400)]
+    alg.set_parents(p0s)
+
+    # alg = ApproxBayesComSMC(n_iter=300, max_round=30, parallel=True, verbose=False)
+
     alg.fit(m0)
 
-    po = alg.sample_posteriors(1000)
+    po = alg.sample_posteriors(300)
 
     print(po.to_df().describe())
