@@ -1,18 +1,22 @@
 version:                "3"
 services:
   spd:
-      image:            sims-pars-dev:latest
+      image: sims-pars-dev:latest
       volumes:
         - ./notebooks:/home/jovyan/work
-        - ./sims_pars:/home/jovyan/work/sims_pars
+        - ./src/sims_pars:/home/jovyan/work/sims_pars
       ports:
         - 8888:8888
       environment:
         - JUPYTER_TOKEN=hi
       container_name: sp_test
-#
-#  sp:
-#    image: sims-pars:latest
-#    ports:
-#      - 8787:8888
-#    container_name: sp_build
+
+  sp:
+    image: sims-pars:latest
+    volumes:
+      - ./notebooks:/home/jovyan/work
+    ports:
+      - 8787:8888
+    environment:
+      - JUPYTER_TOKEN=hi
+    container_name: sp_build
