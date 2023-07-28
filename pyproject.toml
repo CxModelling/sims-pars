@@ -8,7 +8,7 @@ version = "2.6.0"
 authors = [
   { name="Chu-Chang Ku", email="TimeWz667@gmail.com" },
 ]
-description = "Serving stochastic parameters to simulation modelse"
+description = "Serving stochastic parameters to simulation models"
 readme = "README.md"
 requires-python = ">=3.9"
 classifiers = [
@@ -19,5 +19,5 @@ classifiers = [
 ]
 
 [project.urls]
-"Homepage" = "https://github.com/CxModelling/sims-parst"
+"Homepage" = "https://github.com/CxModelling/sims-pars"
 "Bug Tracker" = "https://github.com/CxModelling/sims-pars/issues"
