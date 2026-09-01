@@ -235,7 +235,6 @@ class ParsedFunction:
     def get_arguments(self, loc=None):
         args = list()
         for arg in self.Arguments:
-            # todo opti
             arg = dict(arg)
             try:
                 arg['value'] = arg['value'].execute(loc)
