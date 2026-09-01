@@ -10,6 +10,11 @@ from joblib import Parallel, delayed
 __author__ = 'TimeWz667'
 __all__ = ['Fitter', 'PriorSampling', 'ParameterSet']
 
+# TODO(chromosome-api): the Fitter here drives AbsObjective models from
+# sims_pars.fitting.base, which are broken against the current Chromosome. Fitters
+# construct fine but .fit(model) fails once a real model is attached. Superseded
+# by sims_pars.fit.base.Fitter until the fit/ fitting merge lands.
+
 
 class IdleModel(AbsObjective):
     def __init__(self):

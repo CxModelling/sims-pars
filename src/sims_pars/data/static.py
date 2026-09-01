@@ -1,3 +1,4 @@
+# TODO(epidag): dead module — imports the missing predecessor package `epidag`. See sims_pars/data/__init__.py.
 import pandas as pd
 from epidag.distribution import CategoricalRV
 from epidag.data.frame import AbsDataSet

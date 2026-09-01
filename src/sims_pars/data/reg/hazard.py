@@ -1,3 +1,4 @@
+# TODO(epidag): dead module — imports the missing predecessor package `epidag`. See sims_pars/data/__init__.py.
 import numpy as np
 import numpy.random as rd
 from scipy.special import gamma

@@ -8,6 +8,13 @@ from collections import namedtuple
 __author__ = 'Chu-Chang Ku'
 __all__ = ['AbsObjective', 'AbsObjectiveBN', 'AbsObjectiveSimBased']
 
+# TODO(chromosome-api): this whole module (and everything in sims_pars.fitting /
+# sims_pars.fit.ga that builds on it) targets a pre-"Remove likelihood"
+# Chromosome that had LogPrior / LogLikelihood / is_prior_evaluated /
+# is_likelihood_evaluated. The current Chromosome only has LogProb, so
+# constructing any AbsObjectiveBN subclass raises AttributeError. Needs the
+# fit/ fitting merge before it can be un-broken.
+
 
 Domain = namedtuple('Domain', ('Name', 'Type', 'Lower', 'Upper'))
 
@@ -27,6 +34,7 @@ class AbsObjective(metaclass=ABCMeta):
         raise AttributeError('Unknown parameter definition')
 
     def serve_from_json(self, js: dict):
+        # TODO(chromosome-api): broken — sets the removed LogPrior/LogLikelihood.
         p = self.serve(js['Locus'])
         p.LogPrior, p.LogLikelihood = js['LogPrior'], js['LogLikelihood']
         return p
@@ -44,7 +52,8 @@ class AbsObjective(metaclass=ABCMeta):
         pass
 
     def evaluate(self, pars: Chromosome) -> float:
-        # prevent re-evaluation
+        # TODO(chromosome-api): broken — is_likelihood_evaluated / LogLikelihood
+        # were removed from Chromosome.
         if not pars.is_likelihood_evaluated():
             pars.LogLikelihood = self.calc_likelihood(pars)
         return pars.LogLikelihood
@@ -55,6 +64,9 @@ class AbsObjective(metaclass=ABCMeta):
 
 
 class AbsObjectiveBN(AbsObjective, metaclass=ABCMeta):
+    # TODO(chromosome-api): broken — __init__ calls sample_prior -> evaluate_prior
+    # -> Chromosome.is_prior_evaluated(), which no longer exists, so no subclass
+    # can be instantiated.
     def __init__(self, bn: Union[BayesianNetwork, str, dict], exo=None):
         AbsObjective.__init__(self, exo)
         if isinstance(bn, str):
@@ -95,6 +107,7 @@ class AbsObjectiveBN(AbsObjective, metaclass=ABCMeta):
         return pars
 
     def evaluate_prior(self, p: Chromosome):
+        # TODO(chromosome-api): broken — is_prior_evaluated / LogPrior were removed.
         if not p.is_prior_evaluated():
             p.LogPrior = evaluate_nodes(self.BayesianNetwork, p)
         return p.LogPrior

@@ -4,6 +4,9 @@ import scipy.stats as sts
 
 __all__ = ['BetaBin', 'NormalTwo']
 
+# TODO(chromosome-api): broken — every class here subclasses AbsObjectiveBN, which
+# cannot be constructed against the current Chromosome. See sims_pars/fitting/base.py.
+
 
 class BetaBin(AbsObjectiveSimBased):
     def __init__(self, data=(7, 14)):

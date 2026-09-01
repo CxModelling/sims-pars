@@ -6,6 +6,9 @@ from sims_pars.fitting.base import AbsObjective
 __author__ = 'Chu-Chang Ku'
 __all__ = ['get_crossover']
 
+# TODO(chromosome-api): usable only with a sims_pars.fitting objective, which is
+# currently broken against the Chromosome API. See sims_pars/fitting/base.py.
+
 
 class AbsCrossover(metaclass=ABCMeta):
     @abstractmethod

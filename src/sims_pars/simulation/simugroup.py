@@ -91,6 +91,8 @@ class SimulationGroup:
                 loci.fill(pc)
             prior += loci.evaluate(pc)
 
+        # TODO(chromosome-api): writes `LogPrior`, but `Chromosome`/`ParameterCore`
+        # otherwise track `LogProb`. The two names should be unified.
         pc.LogPrior = prior
 
         for act in actors:

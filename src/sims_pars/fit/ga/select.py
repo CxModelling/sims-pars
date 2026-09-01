@@ -9,6 +9,9 @@ from sims_pars.fitting.base import AbsObjective
 __all__ = ['get_selector']
 __author__ = 'Chu-Chang Ku'
 
+# TODO(chromosome-api): both selectors read p.LogLikelihood / p.LogPosterior,
+# which no longer exist on Chromosome. Broken until the fit/ fitting merge.
+
 
 class AbsSelector(metaclass=ABCMeta):
     @abstractmethod

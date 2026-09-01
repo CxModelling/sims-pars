@@ -7,6 +7,10 @@ from joblib import Parallel, delayed
 __all__ = ['draw', 'mutate_and_draw', 'draw_parallel', 'mutate_and_draw_parallel', 'simulate',
            'serve_and_evaluate', 'serve_and_evaluate_parallel']
 
+# TODO(chromosome-api): every helper below assumes Chromosome has LogPrior /
+# LogLikelihood and takes an AbsObjective that cannot currently be constructed.
+# Broken until sims_pars.fitting.base is reconciled with the current Chromosome.
+
 
 def draw(obj: AbsObjective, unpack=False):
     p, li, i = None, np.inf, 0

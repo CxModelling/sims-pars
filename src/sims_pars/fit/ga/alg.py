@@ -15,6 +15,10 @@ from typing import Any
 __author__ = 'Chu-Chang Ku'
 __all__ = ['GeneticAlg']
 
+# TODO(chromosome-api): broken. GeneticAlg runs on sims_pars.fitting models (which
+# can't be constructed against the current Chromosome) and reads p.LogPosterior /
+# p.LogLikelihood, which no longer exist. Blocked on the fit/ fitting merge.
+
 
 class States(BaseModel):
     Generation: int = 0
@@ -125,6 +129,7 @@ class GeneticAlg(Fitter):
             self.Collector.append(p)
 
     def __find_elitism(self):
+        # TODO(chromosome-api): broken — reads the removed LogPosterior / LogLikelihood.
         states = self.States
         fitness = states.MaxFitness
         if self.Settings['target'] == 'MAP':

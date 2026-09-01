@@ -1,3 +1,4 @@
+# TODO(epidag): dead module — imports the missing predecessor package `epidag`. See sims_pars/data/__init__.py.
 from abc import ABCMeta, abstractmethod
 from epidag.distribution import parse_distribution
 

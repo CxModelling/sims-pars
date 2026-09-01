@@ -1,3 +1,4 @@
+# TODO(epidag): dead module — imports the missing predecessor package `epidag`. See sims_pars/data/__init__.py.
 import numpy as np
 from scipy.special import expit
 from epidag.data.reg.hazard import *

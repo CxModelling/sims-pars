@@ -8,6 +8,9 @@ from sims_pars.fitting.base import AbsObjective
 __all__ = ['get_mutator']
 __author__ = 'Chu-Chang Ku'
 
+# TODO(chromosome-api): usable only with a sims_pars.fitting objective, which is
+# currently broken against the Chromosome API. See sims_pars/fitting/base.py.
+
 
 class AbsMutator(metaclass=ABCMeta):
     def __init__(self):

@@ -215,6 +215,9 @@ class ParameterCore(Chromosome):
         Log prior with that of offsprings
         :return: log prior probability
         """
+        # TODO(chromosome-api): broken. `Chromosome` now stores `LogProb`; `LogPrior`
+        # only exists after `SimulationGroup.set_response` runs, so this raises
+        # AttributeError on a freshly generated core. Reconcile LogProb/LogPrior.
         return self.LogPrior + sum(v.DeepLogPrior for v in self.Children.values())
 
     def __iter__(self):
@@ -440,6 +443,10 @@ class PseudoParameterCore(ParameterCore):
         print('{} ({})'.format(self.Nickname, self))
 
     def clone(self, copy_sc=False, include_children=False):
+        # TODO(chromosome-api): broken. References `self.LogPrior` (see
+        # `ParameterCore.DeepLogPrior`); `ParameterCore.clone` was fixed to use
+        # `LogProb`, this override was not. Also passes `dict(self)` positionally
+        # where `generate` expects `nickname, parent, exo`.
         if self.Parent:
             raise AttributeError('This is not the root. Please clone from the root node')
         if copy_sc:
@@ -456,6 +463,7 @@ class PseudoParameterCore(ParameterCore):
         return pc_new
 
     def __children_copy(self, pc_new):
+        # TODO(chromosome-api): broken. References the removed `LogPrior` attribute.
         for k, chd in self.Children.items():
             gp = chd.Group
             chd_new = pc_new.breed(k, gp, exo=chd.Locus)
