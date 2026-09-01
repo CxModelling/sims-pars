@@ -1,4 +1,6 @@
+import logging
 import unittest
+
 from sims_pars.monitor import Monitor
 
 __author__ = 'TimeWz667'
@@ -28,5 +30,35 @@ class TestMonitor(unittest.TestCase):
         self.assertEqual(self.Mon.Time, 53)
 
 
-if __name__ == '__main__':
-    unittest.main()
+def test_trajectories_shape():
+    mon = Monitor('traj-test', stream_handler=False)
+    mon.keep(Size=4)
+    mon.step()
+    mon.keep(Size=6)
+    mon.step()
+    df = mon.Trajectories
+    assert list(df['Size']) == [4, 6]
+    assert df.index.name == 'Time'
+
+
+def test_no_duplicate_stream_handlers():
+    name = 'dedup-test'
+    Monitor(name)
+    Monitor(name)
+    Monitor(name)
+    logger = logging.getLogger(name)
+    streams = [h for h in logger.handlers
+               if isinstance(h, logging.StreamHandler)
+               and not isinstance(h, logging.FileHandler)]
+    assert len(streams) == 1
+
+
+def test_set_log_path_is_idempotent(tmp_path):
+    name = 'file-dedup-test'
+    mon = Monitor(name, stream_handler=False)
+    path = str(tmp_path / 'run.log')
+    mon.set_log_path(path)
+    mon.set_log_path(path)
+    files = [h for h in logging.getLogger(name).handlers
+             if isinstance(h, logging.FileHandler)]
+    assert len(files) == 1
