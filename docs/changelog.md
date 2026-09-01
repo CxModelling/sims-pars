@@ -10,6 +10,12 @@
 - Packaging consolidated into a single `pyproject.toml`. `src/setup.py`,
   `requirements/` and `environments/env_dev.yml` were removed; use
   `pip install -e ".[dev]"`.
+- The `hme` extra is now `gpytorch` + CPU `torch` instead of `gpflow` +
+  `tensorflow`. `sims_pars.fit.hme.emulator.GPREmulator` is reimplemented on
+  GPyTorch (exact GP, `ScaleKernel(RBFKernel)`, Adam); `predict()` returns 1-D
+  mean/variance arrays. There are no GPU/device options — the emulator runs on
+  CPU. This drops the TensorFlow dependency entirely and restores Python 3.14
+  support for history matching.
 
 ### Security
 

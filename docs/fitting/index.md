@@ -29,5 +29,5 @@ run's particles via `set_parents(...)`.
 
 !!! note "Status"
     `sims_pars.fit.hme` (history matching) needs the `hme` extra
-    (gpflow/tensorflow). The `sims_pars.fitting` package and `sims_pars.fit.ga`
+    (gpytorch + CPU torch). The `sims_pars.fitting` package and `sims_pars.fit.ga`
     are mid-refactor and not part of the supported surface yet.

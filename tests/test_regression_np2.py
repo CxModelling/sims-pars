@@ -11,7 +11,7 @@ import sims_pars
 # that are intentionally not part of the supported import surface yet.
 _SKIP_PREFIXES = (
     'sims_pars.data',          # legacy: still imports the predecessor `epidag`
-    'sims_pars.fit.hme',       # optional extra: gpflow / tensorflow
+    'sims_pars.fit.hme',       # optional extra: gpytorch / torch
 )
 
 

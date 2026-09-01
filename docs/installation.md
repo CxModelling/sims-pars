@@ -13,7 +13,7 @@ pip install sims-pars
 | Extra | Installs | Enables |
 |-------|----------|---------|
 | `plot` | matplotlib | `BayesianNetwork.plot()` and notebook figures |
-| `hme`  | gpflow, tensorflow | history-matching emulator (`sims_pars.fit.hme`) |
+| `hme`  | gpytorch, torch (CPU) | history-matching GP emulator (`sims_pars.fit.hme`) |
 | `docs` | mkdocs-material, mkdocstrings, mkdocs-jupyter | building this site |
 | `dev`  | pytest, pytest-cov, ruff | the test suite and linter |
 

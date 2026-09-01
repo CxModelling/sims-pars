@@ -1,92 +1,102 @@
-from abc import ABCMeta, abstractmethod
-import numpy as np
+"""Gaussian-process emulators for Bayesian history matching.
+
+Backed by GPyTorch (CPU only — no device/GPU options). Each emulator learns one
+scalar output of the simulator and returns a predictive mean and variance for
+the latent function, matching the ``predict_f`` semantics of the previous
+gpflow implementation.
+"""
+from __future__ import annotations
 
 import warnings
-warnings.simplefilter("ignore", UserWarning)
-from gpflow.kernels import RBF
-from gpflow.models import GPR
-from gpflow.optimizers import Scipy
+from abc import ABCMeta, abstractmethod
+
+import gpytorch
+import numpy as np
+import torch
 
 __all__ = ['AbsEmulator', 'GPREmulator']
 
+_DTYPE = torch.float64   # GP regression needs double precision for a stable Cholesky
+
+
+def _tensor(a) -> torch.Tensor:
+    return torch.as_tensor(np.asarray(a, dtype=float), dtype=_DTYPE)
+
 
 class AbsEmulator(metaclass=ABCMeta):
-    def __init__(self, output, kernel=None, **kwargs):
+    def __init__(self, output, kernel=None, maxiter: int = 100, lr: float = 0.1, **kwargs):
         self.Output = output
-        if kernel is None:
-            self.Kernel = RBF()
-        else:
-            self.Kernel = kernel
-        self.Opt = dict(kwargs)
+        self.Kernel = kernel
+        self.Opt = {'maxiter': maxiter, 'lr': lr, **kwargs}
         self.GP = None
 
     @abstractmethod
     def train(self, xs, ys) -> None:
-        pass
+        ...
 
     @abstractmethod
     def predict(self, xs) -> tuple[np.ndarray, np.ndarray]:
-        pass
+        ...
+
+
+class _ExactGP(gpytorch.models.ExactGP):
+    def __init__(self, train_x, train_y, likelihood, kernel=None):
+        super().__init__(train_x, train_y, likelihood)
+        self.mean_module = gpytorch.means.ConstantMean()
+        base = kernel if kernel is not None else gpytorch.kernels.RBFKernel()
+        self.covar_module = gpytorch.kernels.ScaleKernel(base)
+
+    def forward(self, x):
+        return gpytorch.distributions.MultivariateNormal(
+            self.mean_module(x), self.covar_module(x)
+        )
 
 
 class GPREmulator(AbsEmulator):
+    """Exact GP regression emulator for a single simulator output."""
+
     def train(self, xs, ys):
-        xs = np.array(xs)
-        ys = np.array([[y[self.Output]] for y in ys], dtype=float)
-        self.GP = GPR(data=(xs, ys), kernel=self.Kernel)
-        opt = Scipy()
-        opt.minimize(self.GP.training_loss, self.GP.trainable_variables, options=self.Opt)
+        x = _tensor(xs)
+        y = _tensor([row[self.Output] for row in ys])
 
-    def predict(self, xs) -> tuple[list, list]:
-        assert self.GP is not None
+        likelihood = gpytorch.likelihoods.GaussianLikelihood().to(_DTYPE)
+        model = _ExactGP(x, y, likelihood, kernel=self.Kernel).to(_DTYPE)
+        model.train()
+        likelihood.train()
 
-        mean, var = self.GP.predict_f(xs)
-        mean, var = mean.numpy(), var.numpy()
+        optimizer = torch.optim.Adam(model.parameters(), lr=self.Opt['lr'])
+        mll = gpytorch.mlls.ExactMarginalLogLikelihood(likelihood, model)
+        for _ in range(int(self.Opt['maxiter'])):
+            optimizer.zero_grad()
+            loss = -mll(model(x), y)
+            loss.backward()
+            optimizer.step()
+
+        model.eval()
+        likelihood.eval()
+        self.GP = model
+
+    def predict(self, xs) -> tuple[np.ndarray, np.ndarray]:
+        """Predictive mean and variance of the latent function, as 1-D arrays."""
+        assert self.GP is not None, "emulator must be trained before predict()"
+        x = _tensor(xs)
+        with torch.no_grad(), gpytorch.settings.fast_pred_var(), warnings.catch_warnings():
+            warnings.simplefilter("ignore", gpytorch.utils.warnings.GPInputWarning)
+            pred = self.GP(x)
+            mean = pred.mean.cpu().numpy().ravel()
+            var = pred.variance.cpu().numpy().ravel()
         return mean, var
 
 
 if __name__ == '__main__':
-    import pandas as pd
+    rng = np.random.default_rng(0)
+    X = rng.random((20, 1))
+    Y = [{'y': float(3.0 + np.sin(6 * x[0]))} for x in X]
 
-    X = np.array(
-        [
-            [0.865], [0.666], [0.804], [0.771], [0.147], [0.866], [0.007], [0.026],
-            [0.171], [0.889], [0.243], [0.028],
-        ]
-    )
-    Y = np.array(
-        [
-            [1.57], [3.48], [3.12], [3.91], [3.07], [1.35], [3.80], [3.82], [3.49],
-            [1.30], [4.00], [3.82],
-        ]
-    )
+    emu = GPREmulator('y', maxiter=80)
+    emu.train(X, Y)
 
-    model = GPR(
-        (X, Y),
-        kernel=RBF(), mean_function=None
-    )
-
-    opt = Scipy()
-    opt.minimize(model.training_loss, model.trainable_variables, options=dict())
-
-    Xplot = np.linspace(-0.1, 1.1, 10)[:, None]
-
-    f_mean, f_var = model.predict_f(Xplot, full_cov=False)
-    y_mean, y_var = model.predict_y(Xplot)
-
-    f_mean, f_var = f_mean.numpy(), f_var.numpy()
-    y_mean, y_var = y_mean.numpy(), y_var.numpy()
-
-    f_lower = f_mean - 1.96 * np.sqrt(f_var)
-    f_upper = f_mean + 1.96 * np.sqrt(f_var)
-    y_lower = y_mean - 1.96 * np.sqrt(y_var)
-    y_upper = y_mean + 1.96 * np.sqrt(y_var)
-
-    print(f_mean, f_var)
-    dat = pd.DataFrame({
-        'f_lower': f_lower.reshape(-1),
-        'f_upper': f_upper.reshape(-1),
-        'y_lower': y_lower.reshape(-1),
-        'y_upper': y_upper.reshape(-1)
-    })
-    print(dat)
+    Xp = np.linspace(-0.1, 1.1, 10)[:, None]
+    m, v = emu.predict(Xp)
+    for xp, mi, vi in zip(Xp[:, 0], m, v):
+        print(f"x={xp:+.2f}  mean={mi:+.3f}  sd={np.sqrt(vi):.3f}")
