@@ -1,6 +1,6 @@
 # Changelog
 
-## 3.0.0 (unreleased)
+## 3.0.0 (2026-09-01)
 
 A modernisation release: the package now installs and passes its tests on
 **Python 3.10 – 3.14**, on **NumPy 2** and **pydantic 2**. It also gains a real
