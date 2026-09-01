@@ -21,6 +21,40 @@ pip install sims-pars
 pip install "sims-pars[plot]"
 ```
 
+## From GitHub
+
+Install the latest `main` directly, without cloning:
+
+```bash
+pip install "git+https://github.com/CxModelling/sims-pars.git"
+```
+
+Pin a released version or any branch / commit with `@<ref>`, and add extras in
+the usual brackets:
+
+```bash
+pip install "sims-pars[plot] @ git+https://github.com/CxModelling/sims-pars.git@v3.0.0"
+pip install "git+https://github.com/CxModelling/sims-pars.git@main#egg=sims-pars[hme]"
+```
+
+`uv` works the same way:
+
+```bash
+uv pip install "git+https://github.com/CxModelling/sims-pars.git@v3.0.0"
+```
+
+In a `pyproject.toml` / `requirements.txt`:
+
+```
+sims-pars @ git+https://github.com/CxModelling/sims-pars.git@v3.0.0
+```
+
+Or download a source tarball for a tag and install it offline:
+
+```bash
+pip install https://github.com/CxModelling/sims-pars/archive/refs/tags/v3.0.0.tar.gz
+```
+
 ## Development setup
 
 ```bash
