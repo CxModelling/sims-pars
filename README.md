@@ -48,14 +48,6 @@ Optional extras: `plot`, `hme`, `docs`, `dev`.
 [Getting Started](https://cxmodelling.github.io/sims-pars/getting-started/)
 guide.
 
-## Development
-
-```bash
-pip install -e ".[dev,plot]"
-pytest
-ruff check src tests
-```
-
 ## Code quality
 
 | Aspect | Status |
