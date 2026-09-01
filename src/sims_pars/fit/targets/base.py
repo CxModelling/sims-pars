@@ -1,5 +1,5 @@
 from abc import ABCMeta, abstractmethod
-from functools import lru_cache
+from functools import cached_property
 
 __author__ = 'Chu-Chang Ku'
 __all__ = ['AbsData']
@@ -14,7 +14,7 @@ class AbsData(metaclass=ABCMeta):
     def get_var_obs(self):
         pass
 
-    @lru_cache
+    @cached_property
     def ev(self):
         return self.Value, self.get_var_obs()
 

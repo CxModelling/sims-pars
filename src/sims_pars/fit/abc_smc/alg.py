@@ -10,7 +10,7 @@ __all__ = ['ApproxBayesComSMC']
 
 
 class StateABCSMC:
-    def __init__(self, wts, pts, rnd=0, stay=0, ess=0, acc=1, eps=np.Inf, eps_thres=np.Inf):
+    def __init__(self, wts, pts, rnd=0, stay=0, ess=0, acc=1, eps=np.inf, eps_thres=np.inf):
         self.Wts = wts
         self.Particles = pts
         self.Round = rnd
@@ -22,7 +22,7 @@ class StateABCSMC:
 
 
 def sample_fin(model, unpack=False):
-    di = np.Inf
+    di = np.inf
     n_eval = 0
     while np.isinf(di):
         n_eval += 1
@@ -35,7 +35,7 @@ def sample_fin(model, unpack=False):
 
 
 def sample_fin_cont(model, p0, unpack=False):
-    di = np.Inf
+    di = np.inf
     n_eval = 0
     while np.isinf(di):
         n_eval += 1
@@ -49,7 +49,7 @@ def sample_fin_cont(model, p0, unpack=False):
 
 
 def sample_ess(model, eps, unpack=False):
-    di = np.Inf
+    di = np.inf
     n_eval = 0
     while di > eps:
         n_eval += 1
@@ -67,7 +67,7 @@ def mutate(p0, steps):
 
 
 def sample_mutation(model, pt0, steps, unpack=False):
-    di = np.Inf
+    di = np.inf
     n_eval = 0
     p0 = pt0.Pars if isinstance(pt0, Particle) else pt0['Pars']['Locus']
     while np.isinf(di):

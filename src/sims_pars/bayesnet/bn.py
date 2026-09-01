@@ -320,11 +320,5 @@ def bayes_net_from_json(js):
 
     for node in js['Nodes']:
         bn.append_from_js(node)
-    nx.freeze(bn)
-    bn.json = js
-    bn.__order = js['Order']
-    bn.__roots = js['Roots']
-    bn.__rv_roots = js['RVRoots']
-    bn.__leaves = js['Leaves']
-    bn.__exo = js['Exo']
+    bn.complete()
     return bn

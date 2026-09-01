@@ -1,4 +1,4 @@
-from pydantic.types import PositiveInt
+from pydantic import PositiveInt
 from abc import ABCMeta, abstractmethod
 import numpy as np
 import numpy.random as rd

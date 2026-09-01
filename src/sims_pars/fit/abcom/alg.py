@@ -15,7 +15,7 @@ class StateABC:
 
 
 def sample_fin(model):
-    di = np.Inf
+    di = np.inf
     n_eval = 0
     while np.isinf(di):
         n_eval += 1
@@ -26,7 +26,7 @@ def sample_fin(model):
 
 
 def sample_ess(model, eps):
-    di = np.Inf
+    di = np.inf
     n_eval = 0
     while di > eps:
         n_eval += 1
@@ -67,7 +67,7 @@ class ApproxBayesCom(Fitter):
             dis = list()
             n_eval = 0
             for _ in tqdm.tqdm(range(n_sim), 'Evaluate prior'):
-                di = np.Inf
+                di = np.inf
                 while np.isinf(di):
                     n_eval += 1
                     p = self.Model.sample_prior()
@@ -106,7 +106,7 @@ class ApproxBayesCom(Fitter):
             n_eval = 0
             for _ in tqdm.tqdm(range(n_collect), 'Collect posterior'):
                 _, sim, ne = sample_ess(self.Model, eps)
-                post.append(sim)
+                post.append(Particle.from_json(sim))
                 n_eval += ne
 
         for pt in post.Particles:

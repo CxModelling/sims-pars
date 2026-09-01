@@ -1,9 +1,12 @@
 from abc import ABCMeta, abstractmethod
+from numbers import Real
 import re
 import numpy as np
 from sims_pars.util import *
 from sims_pars.prob import parse_distribution, complete_function
 from pydantic import ValidationError
+
+_MISSING = object()
 
 __author__ = 'TimeWz667'
 __all__ = ['ValueLoci',
@@ -51,7 +54,7 @@ class Loci(metaclass=ABCMeta):
 class ValueLoci(Loci):
     def __init__(self, name, val):
         Loci.__init__(self, name)
-        self.Value = eval(val, MATH_FUNC) if isinstance(val, str) else val
+        self.Value = safe_eval(val, MATH_FUNC) if isinstance(val, str) else val
 
     @property
     def Parents(self):
@@ -116,6 +119,8 @@ class DistributionLoci(Loci):
         self.Func = complete_function(val)
         self.Parsed = parse_function(val)
         self.__parents = pas if pas else self.Parsed.Parents
+        self.__dist_key = _MISSING
+        self.__dist_cache = None
 
     @property
     def Parents(self):
@@ -125,11 +130,31 @@ class DistributionLoci(Loci):
     def Definition(self):
         return self.Func
 
-    def get_distribution(self, pas=None):
+    def __cache_key(self, pas):
+        # Distributions with fixed parameters can be built once; parameterised
+        # ones are cached against the resolved parent values so repeated draws
+        # in a fitting loop do not re-parse and re-freeze the scipy dist.
+        if not self.__parents:
+            return ()
         try:
-            return parse_distribution(self.Func, loc=pas)
+            vals = [(p, pas[p]) for p in self.__parents]
+        except (TypeError, KeyError):
+            return _MISSING
+        if not all(isinstance(v, Real) for _, v in vals):
+            return _MISSING
+        return tuple(sorted(vals))
+
+    def get_distribution(self, pas=None):
+        key = self.__cache_key(pas)
+        if key is not _MISSING and self.__dist_cache is not None and key == self.__dist_key:
+            return self.__dist_cache
+        try:
+            dist = parse_distribution(self.Func, loc=pas)
         except KeyError:
             return find_data_sampler(self.Func.Function, loc=pas)
+        if key is not _MISSING:
+            self.__dist_key, self.__dist_cache = key, dist
+        return dist
 
     def render(self, pas=None):
         return self.get_distribution(pas).sample()
@@ -142,7 +167,7 @@ class DistributionLoci(Loci):
             dist = self.get_distribution(pas)
             return dist.logpdf(pas[self.Name])
         except ValidationError:
-            return - np.Inf
+            return - np.inf
 
     def to_json(self):
         js = Loci.to_json(self)

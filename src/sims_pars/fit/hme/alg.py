@@ -32,7 +32,7 @@ class Matchers:
         ims = list()
 
         for k, d in self.Data.items():
-            e, v_o = d.ev()
+            e, v_o = d.ev
             y, v_e = pt['Ys'][k], pt['Vs'][k]
             imp = np.abs(e - y) / np.sqrt(self.VarModel + v_o + v_e)
             ims.append(float(imp))

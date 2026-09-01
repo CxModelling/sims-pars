@@ -1,12 +1,15 @@
-from pydantic import BaseModel, ValidationError
-from abc import ABCMeta, abstractmethod
+from abc import ABC, abstractmethod
 import ast
 
+from pydantic import BaseModel, ValidationError
+
+from sims_pars.util import safe_eval
+
 __author__ = 'Chu-Chang Ku'
-__all__ = ['Atelier', 'AbsCreator']
+__all__ = ['Atelier', 'AbsCreator', 'ValidationError']
 
 
-class AbsCreator(BaseModel, metaclass=ABCMeta):
+class AbsCreator(BaseModel, ABC):
     @abstractmethod
     def create(self):
         pass
@@ -28,7 +31,7 @@ class Atelier:
             raise AttributeError('Unknown input type')
 
         tp = inputs.func.id
-        req = self.Creators[tp].schema()['properties']
+        req = self.Creators[tp].model_json_schema()['properties']
 
         args = [arg.value if isinstance(arg, ast.Constant) else ast.unparse(arg) for arg in inputs.args]
 
@@ -58,7 +61,7 @@ class Atelier:
     def get_blueprint(self, seq, loc=None, to_complete=True):
         if to_complete:
             seq = self.complete_def(seq)
-        return eval(seq, self.Creators, loc)
+        return safe_eval(seq, self.Creators, loc)
 
     def create(self, seq, loc=None, append_src=False, to_complete=True):
         bp = self.get_blueprint(seq, loc=loc, to_complete=to_complete)
@@ -71,7 +74,7 @@ class Atelier:
                 pass
             try:
                 obj.json = {
-                    'Args': bp.dict()
+                    'Args': bp.model_dump()
                 }
             except AttributeError:
                 pass
@@ -79,7 +82,7 @@ class Atelier:
         return obj
 
     def get_schema(self, tp):
-        return self.Creators[tp].schema()
+        return self.Creators[tp].model_json_schema()
 
     def list(self):
         return list(self.Creators.keys())

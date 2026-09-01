@@ -1,16 +1,79 @@
-import numpy as np
-from numpy.random import choice
-import scipy.special as sp
-import math
 import ast
+import math
 import re
+
+import numpy as np
+import scipy.special as sp
+from numpy.random import choice
 
 __author__ = 'TimeWz667'
 __all__ = ['add_math_func', 'MATH_FUNC',
            'add_data_func', 'find_data_sampler', 'DATA_FUNC',
-           'ScriptException', 'resample',
+           'ScriptException', 'resample', 'safe_eval',
            'parse_parents', 'parse_math_expression',
            'parse_function', 'evaluate_function']
+
+
+# --- restricted expression evaluation -----------------------------------------
+
+# AST node types allowed inside a sims-pars script expression. Everything that
+# could reach the host environment (attribute access, subscripting, lambdas,
+# comprehensions, walrus, f-strings, ...) is rejected.
+_ALLOWED_NODES = (
+    ast.Expression, ast.Constant, ast.Name, ast.Load,
+    ast.Call, ast.keyword,
+    ast.BinOp, ast.UnaryOp, ast.BoolOp, ast.Compare,
+    ast.IfExp, ast.List, ast.Tuple, ast.Dict, ast.Set,
+    ast.Add, ast.Sub, ast.Mult, ast.Div, ast.FloorDiv, ast.Mod, ast.Pow,
+    ast.USub, ast.UAdd, ast.Not,
+    ast.And, ast.Or,
+    ast.Eq, ast.NotEq, ast.Lt, ast.LtE, ast.Gt, ast.GtE,
+)
+
+
+class UnsafeExpression(ValueError):
+    """Raised when a script expression contains a disallowed construct."""
+
+
+# A tiny, side-effect-free subset of builtins that script expressions may use.
+_SAFE_BUILTINS = {
+    'min': min, 'max': max, 'abs': abs, 'round': round,
+    'sum': sum, 'pow': pow, 'len': len,
+    'int': int, 'float': float, 'bool': bool,
+}
+
+
+def _validate_expr(tree: ast.AST) -> None:
+    for node in ast.walk(tree):
+        if not isinstance(node, _ALLOWED_NODES):
+            raise UnsafeExpression(
+                f'Disallowed expression element: {type(node).__name__}'
+            )
+        if isinstance(node, ast.Name) and node.id.startswith('__'):
+            raise UnsafeExpression(f'Dunder identifier not allowed: {node.id}')
+        if isinstance(node, ast.Call) and not isinstance(node.func, ast.Name):
+            raise UnsafeExpression('Only direct function calls are allowed')
+
+
+def safe_eval(expr, names=None, local=None):
+    """
+    Evaluate a sims-pars script expression with builtins stripped and the AST
+    restricted to an arithmetic / function-call allow-list.
+
+    :param expr: expression string or a pre-compiled code object
+    :param names: mapping of names available to the expression (functions,
+                  distribution creators, ...)
+    :param local: mapping of local values (parent nodes)
+    :return: the evaluated result
+    """
+    if isinstance(expr, str):
+        tree = ast.parse(expr, mode='eval')
+        _validate_expr(tree)
+        expr = compile(tree, '<sims-pars-expr>', 'eval')
+    glb = {'__builtins__': dict(_SAFE_BUILTINS)}
+    if names:
+        glb.update(names)
+    return eval(expr, glb, dict(local) if local else {})
 
 
 def ifelse(cond, a, b):
@@ -127,6 +190,9 @@ class MathExpression:
         self.Expression = eq
         self.Var = var
         self.Func = fn
+        tree = ast.parse(eq, mode='eval')
+        _validate_expr(tree)
+        self._code = compile(tree, '<sims-pars-expr>', 'eval')
 
     def __call__(self, loc=None):
         try:
@@ -135,8 +201,7 @@ class MathExpression:
             return self.Expression
 
     def execute(self, loc=None):
-        loc = dict(loc) if loc else dict()
-        return eval(self.Expression, MATH_FUNC, loc)
+        return safe_eval(self._code, MATH_FUNC, loc)
 
     @property
     def Parents(self):
@@ -189,7 +254,8 @@ class ParsedFunction:
 
     @property
     def Parents(self):
-        return set.union(*[arg['value'].Var for arg in self.Arguments])
+        vs = [arg['value'].Var for arg in self.Arguments]
+        return set.union(*vs) if vs else set()
 
     def to_json(self, loc=None):
         return {
@@ -206,34 +272,24 @@ class ParsedFunction:
 
 def parse_function(seq):
     seq = re.sub(r'\s+', '', seq)
-    try:
-        seq_ast = ast.parse(seq)
-    except SyntaxError:
-        raise SyntaxError
+    body = ast.parse(seq, mode='eval').body  # propagates SyntaxError
 
-    f, pars = None, list()
-    start = False
-    keylock = False
-    # extract arguments
-    for s in ast.walk(seq_ast):
-        if not start and isinstance(s, ast.Name):
-            f = s.id
-            start = True
-        elif start:
-            try:
-                if isinstance(s, ast.Load):
-                    break
-                elif isinstance(s, ast.keyword):
-                    pars.append({
-                        'key': s.arg,
-                        'value': ast_to_math_expression(s.value)
-                    })
-                    keylock = True
-                elif not keylock:
-                    pars.append({'value': ast_to_math_expression(s)})
-
-            except AttributeError:
-                pass
+    if isinstance(body, ast.Call) and isinstance(body.func, ast.Name):
+        f = body.func.id
+        pars = [{'value': ast_to_math_expression(a)} for a in body.args]
+        pars += [
+            {'key': kw.arg, 'value': ast_to_math_expression(kw.value)}
+            for kw in body.keywords
+        ]
+    else:
+        # Not a direct call (e.g. a bare expression handed to PseudoLoci).
+        # Keep it tolerant: expose the free names as the "arguments".
+        names, _ = find_ast_parents(body)
+        f = None
+        pars = [
+            {'value': ast_to_math_expression(ast.Name(id=n, ctx=ast.Load()))}
+            for n in sorted(names)
+        ]
     return ParsedFunction(seq, f, pars)
 
 

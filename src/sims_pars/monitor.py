@@ -1,4 +1,6 @@
 import logging
+import os
+
 import pandas as pd
 
 __author__ = 'TimeWz667'
@@ -11,8 +13,9 @@ class Monitor:
         self.Logger = logging.getLogger(name)
         self.Logger.setLevel(logging.INFO)
 
-        if stream_handler and not self.Logger.hasHandlers():
+        if stream_handler and not getattr(self.Logger, '_sims_pars_stream', False):
             self.add_handler(logging.StreamHandler())
+            self.Logger._sims_pars_stream = True
 
         self.Records = []
         self.Time = 0
@@ -28,8 +31,11 @@ class Monitor:
         self.Logger.error(msg, *arg, **kwargs)
 
     def set_log_path(self, filename):
-        fhl = logging.FileHandler(filename)
-        self.add_handler(fhl)
+        target = os.path.abspath(filename)
+        for h in self.Logger.handlers:
+            if isinstance(h, logging.FileHandler) and h.baseFilename == target:
+                return
+        self.add_handler(logging.FileHandler(filename))
 
     def add_handler(self, handler):
         if not handler.formatter:

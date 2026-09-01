@@ -1,5 +1,5 @@
 import numpy as np
-from sims_pars.bayesnet import BayesianNetwork, get_sufficient_nodes, Chromosome
+from sims_pars.bayesnet import get_sufficient_nodes, Chromosome
 
 __author__ = 'TimeWz667'
 __all__ = ['sample', 'sample_minimally', 'evaluate_nodes', 'sample_chromosome']
@@ -69,9 +69,9 @@ def evaluate_nodes(bn, pars):
     """
     nodes = bn.DAG.nodes
 
-    lps = np.sum([nodes[k]['loci'].evaluate(pars) for k in pars.keys() if k in nodes])
+    lps = sum(nodes[k]['loci'].evaluate(pars) for k in pars if k in nodes)
     if np.isnan(lps):
-        lps = - np.Inf
+        lps = - np.inf
     return lps
 
 

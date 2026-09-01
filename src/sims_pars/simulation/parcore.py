@@ -251,8 +251,7 @@ class ParameterCore(Chromosome):
         else:
             sg = self.SG
         pc_new = sg.generate(self.Nickname, exo=dict(self))
-        pc_new.LogLikelihood = self.LogLikelihood
-        pc_new.LogPrior = self.LogPrior
+        pc_new.LogProb = self.LogProb
 
         if include_children:
             self.__children_copy(pc_new)
@@ -263,8 +262,7 @@ class ParameterCore(Chromosome):
         for k, chd in self.Children.items():
             gp = chd.Group
             chd_new = pc_new.breed(k, gp, exo=chd.Locus)
-            chd_new.LogPrior = chd.LogPrior
-            chd_new.LogLikelihood = chd.LogLikelihood
+            chd_new.LogProb = chd.LogProb
             chd.__children_copy(chd_new)
 
 

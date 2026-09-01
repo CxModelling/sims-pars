@@ -6,7 +6,7 @@ __all__ = ['Chromosome']
 
 
 class Chromosome:
-    def __init__(self, vs=None, prob=np.NaN):
+    def __init__(self, vs=None, prob=np.nan):
         self.Locus = dict(vs) if vs else dict()
         self.LogProb = prob
 
@@ -70,7 +70,7 @@ class Chromosome:
         return g
 
     def reset_probability(self):
-        self.LogProb = np.NaN
+        self.LogProb = np.nan
 
     def is_evaluated(self):
         return not np.isnan(self.LogProb)

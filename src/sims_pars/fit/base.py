@@ -1,5 +1,6 @@
 import numpy as np
 from abc import ABCMeta, abstractmethod
+from functools import cached_property
 from sims_pars.fn import evaluate_nodes, sample, sample_chromosome
 from sims_pars.monitor import Monitor
 from sims_pars.fit.targets import AbsData
@@ -84,7 +85,7 @@ class DataModel(metaclass=ABCMeta):
         p = sample_chromosome(self.BayesianNetwork, p)
         return p
 
-    @property
+    @cached_property
     def Domain(self):
         p = self.sample_prior()
         res = []

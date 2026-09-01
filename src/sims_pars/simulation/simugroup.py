@@ -109,12 +109,12 @@ class SimulationGroup:
         return chd
 
     def __repr__(self):
-        return '{}({}|{}|{})->{}'.format(self.Name,
-                                         self.Exogenous if self.Exogenous else '.',
-                                         self.Listening if self.Listening else '.',
-                                         self.Fixed if self.Fixed else '.',
-                                         self.Floating if self.Floating else '.',
-                                         self.Children)
+        return '{}({}|{}|{}|{})->{}'.format(self.Name,
+                                            self.Exogenous if self.Exogenous else '.',
+                                            self.Listening if self.Listening else '.',
+                                            self.Fixed if self.Fixed else '.',
+                                            self.Floating if self.Floating else '.',
+                                            self.Children)
 
     def to_json(self):
         return {

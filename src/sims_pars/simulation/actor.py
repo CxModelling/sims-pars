@@ -21,7 +21,7 @@ class SimulationActor(metaclass=ABCMeta):
             for p in self.ToRead:
                 try:
                     up[p] = pas[p]
-                except KeyError or AttributeError or TypeError:
+                except (KeyError, AttributeError, TypeError):
                     pass
         return up
 

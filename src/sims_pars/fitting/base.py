@@ -1,4 +1,5 @@
 from abc import ABCMeta, abstractmethod
+from functools import cached_property
 from sims_pars.fn import evaluate_nodes, sample
 from sims_pars.bayesnet import BayesianNetwork, Chromosome, bayes_net_from_json, bayes_net_from_script
 from typing import Union
@@ -77,7 +78,7 @@ class AbsObjectiveBN(AbsObjective, metaclass=ABCMeta):
         self.evaluate_prior(pars)
         return pars
 
-    @property
+    @cached_property
     def Domain(self):
         p = self.sample_prior()
         res = []

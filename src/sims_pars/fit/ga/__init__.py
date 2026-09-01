@@ -1,1 +1,1 @@
-from fit.ga.alg import GeneticAlg
+from sims_pars.fit.ga.alg import GeneticAlg

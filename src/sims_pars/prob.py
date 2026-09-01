@@ -1,11 +1,16 @@
-import scipy.stats as sts
-from scipy.interpolate import interp1d
-import numpy as np
 from abc import ABCMeta, abstractmethod
+from typing import Annotated
+
+import numpy as np
 import numpy.random as rd
+import scipy.stats as sts
+from pydantic import Field, PositiveInt
+from scipy.interpolate import interp1d
+
 from sims_pars.factory import get_atelier, AbsCreator
-import typing
-import pydantic.types as ptp
+
+PositiveFloat = Annotated[float, Field(gt=0)]
+NonNegativeFloat = Annotated[float, Field(ge=0)]
 
 
 __author__ = 'TimeWz667'
@@ -265,8 +270,8 @@ DistributionCentre.register('k', CreConst)
 
 
 class CreGamma(AbsCreator):
-    shape: ptp.PositiveFloat = 1.0
-    rate: ptp.PositiveFloat = 1.0
+    shape: PositiveFloat = 1.0
+    rate: PositiveFloat = 1.0
 
     def create(self):
         return SpDouble(sts.gamma(a=self.shape, scale=1/self.rate))
@@ -276,7 +281,7 @@ DistributionCentre.register('gamma', CreGamma)
 
 
 class CreExp(AbsCreator):
-    rate: ptp.PositiveFloat = 1.0
+    rate: PositiveFloat = 1.0
 
     def create(self):
         return SpDouble(sts.expon(scale=1/self.rate))
@@ -286,8 +291,8 @@ DistributionCentre.register('exp', CreExp)
 
 
 class CreLogNorm(AbsCreator):
-    meanlog: ptp.NonNegativeFloat = 0
-    sdlog: ptp.PositiveFloat = 1
+    meanlog: NonNegativeFloat = 0
+    sdlog: PositiveFloat = 1
 
     def create(self):
         return SpDouble(sts.lognorm(s=np.exp(self.sdlog), scale=np.exp(np.exp(self.meanlog))))
@@ -308,7 +313,7 @@ DistributionCentre.register('unif', CreUniform)
 
 
 class CreChi2(AbsCreator):
-    df: ptp.PositiveFloat = 1.0
+    df: PositiveFloat = 1.0
 
     def create(self):
         return SpDouble(sts.chi2(self.df))
@@ -318,8 +323,8 @@ DistributionCentre.register('chisq', CreChi2)
 
 
 class CreBeta(AbsCreator):
-    shape1: ptp.PositiveFloat = 1.0
-    shape2: ptp.PositiveFloat = 1.0
+    shape1: PositiveFloat = 1.0
+    shape2: PositiveFloat = 1.0
 
     def create(self):
         return SpDouble(sts.beta(self.shape1, self.shape2))
@@ -329,8 +334,8 @@ DistributionCentre.register('beta', CreBeta)
 
 
 class CreInvGamma(AbsCreator):
-    a: ptp.confloat(gt=2) = 2.0
-    rate: ptp.PositiveFloat = 1.0
+    a: Annotated[float, Field(gt=2)] = 2.0
+    rate: PositiveFloat = 1.0
 
     def create(self):
         return SpDouble(sts.invgamma(a=self.a, scale=1/self.rate))
@@ -341,7 +346,7 @@ DistributionCentre.register('invgamma', CreInvGamma)
 
 class CreNorm(AbsCreator):
     mean: float = 0
-    sd: ptp.PositiveFloat = 1.0
+    sd: PositiveFloat = 1.0
 
     def create(self):
         return SpDouble(sts.norm(loc=self.mean, scale=self.sd))
@@ -366,8 +371,8 @@ DistributionCentre.register('triangle', CreTriangle)
 
 
 class CreBinom(AbsCreator):
-    size: ptp.PositiveInt = 1
-    prob: ptp.confloat(ge=0, le=1) = 0.5
+    size: PositiveInt = 1
+    prob: Annotated[float, Field(ge=0, le=1)] = 0.5
 
     def create(self):
         return SpInteger(sts.binom(n=self.size, p=self.prob))
@@ -377,7 +382,7 @@ DistributionCentre.register('binom', CreBinom)
 
 
 class CrePois(AbsCreator):
-    lam: ptp.PositiveFloat = 1
+    lam: PositiveFloat = 1
 
     def create(self):
         return SpInteger(sts.poisson(mu=self.lam))
@@ -387,7 +392,7 @@ DistributionCentre.register('pois', CrePois)
 
 
 class CreCat(AbsCreator):
-    kv: typing.Dict[str, float]
+    kv: dict[str, float]
 
     def create(self):
         return CategoricalRV(self.kv)
