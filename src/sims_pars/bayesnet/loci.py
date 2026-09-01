@@ -3,7 +3,7 @@ from numbers import Real
 import re
 import numpy as np
 from sims_pars.util import *
-from sims_pars.prob import parse_distribution, complete_function
+from sims_pars.prob import DistributionCentre, complete_function
 from pydantic import ValidationError
 
 _MISSING = object()
@@ -116,11 +116,41 @@ class ExoValueLoci(Loci):
 class DistributionLoci(Loci):
     def __init__(self, name, val, pas=None):
         Loci.__init__(self, name)
-        self.Func = complete_function(val)
-        self.Parsed = parse_function(val)
+        self.Parsed = parse_function(val)          # tag + arg expressions, parsed once
+        self.Func = complete_function(val)         # completed source string (to_json / repr)
         self.__parents = pas if pas else self.Parsed.Parents
+
+        tag = self.Parsed.Function
+        self.__creator = DistributionCentre.Creators.get(tag) if tag else None
+        self.__plan = self.__build_plan() if self.__creator is not None else None
+
         self.__dist_key = _MISSING
         self.__dist_cache = None
+
+    def __build_plan(self):
+        """Map each argument to a creator field once, so a draw only has to
+        evaluate the (pre-compiled) argument expressions -- no re-parsing, no
+        pydantic-schema generation, no ``eval`` of a constructor string."""
+        fields = list(self.__creator.model_fields)
+        supplied, pos = {}, 0
+        for arg in self.Parsed.Arguments:
+            if 'key' in arg:
+                supplied[arg['key']] = arg['value']
+            elif pos < len(fields):
+                supplied[fields[pos]] = arg['value']
+                pos += 1
+            else:
+                pos += 1  # extra positional -> ignored, as the old completer did
+
+        plan = []
+        for fname in fields:
+            info = self.__creator.model_fields[fname]
+            if fname in supplied:
+                plan.append((fname, supplied[fname], None))
+            elif not info.is_required():
+                plan.append((fname, None, info.get_default(call_default_factory=True)))
+            # required & unset: omitted -> creator(**kwargs) raises, same as before
+        return plan
 
     @property
     def Parents(self):
@@ -131,9 +161,10 @@ class DistributionLoci(Loci):
         return self.Func
 
     def __cache_key(self, pas):
-        # Distributions with fixed parameters can be built once; parameterised
-        # ones are cached against the resolved parent values so repeated draws
-        # in a fitting loop do not re-parse and re-freeze the scipy dist.
+        # Fixed-parameter distributions are built once; parameterised ones are
+        # cached against the resolved parent values so repeated draws with the
+        # same parents (common between render() and the following evaluate())
+        # skip the rebuild.
         if not self.__parents:
             return ()
         try:
@@ -144,14 +175,18 @@ class DistributionLoci(Loci):
             return _MISSING
         return tuple(sorted(vals))
 
+    def __build_distribution(self, pas):
+        if self.__creator is None:  # data-function node
+            return find_data_sampler(self.Parsed.Function, loc=pas)
+        kwargs = {name: (dflt if expr is None else expr.execute(pas))
+                  for name, expr, dflt in self.__plan}
+        return self.__creator(**kwargs).create()
+
     def get_distribution(self, pas=None):
         key = self.__cache_key(pas)
         if key is not _MISSING and self.__dist_cache is not None and key == self.__dist_key:
             return self.__dist_cache
-        try:
-            dist = parse_distribution(self.Func, loc=pas)
-        except KeyError:
-            return find_data_sampler(self.Func.Function, loc=pas)
+        dist = self.__build_distribution(pas)
         if key is not _MISSING:
             self.__dist_key, self.__dist_cache = key, dist
         return dist
@@ -164,8 +199,7 @@ class DistributionLoci(Loci):
 
     def evaluate(self, pas=None):
         try:
-            dist = self.get_distribution(pas)
-            return dist.logpdf(pas[self.Name])
+            return self.get_distribution(pas).logpdf(pas[self.Name])
         except ValidationError:
             return - np.inf
 

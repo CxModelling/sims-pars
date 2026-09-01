@@ -1,6 +1,5 @@
 import ast
 import math
-import re
 
 import numpy as np
 import scipy.special as sp
@@ -270,8 +269,30 @@ class ParsedFunction:
     __repr__ = __str__
 
 
+def _compact(seq: str) -> str:
+    """Strip whitespace, but never inside a string literal."""
+    out, quote, i = [], "", 0
+    while i < len(seq):
+        c = seq[i]
+        if quote:
+            out.append(c)
+            if c == "\\" and i + 1 < len(seq):
+                out.append(seq[i + 1])
+                i += 2
+                continue
+            if c == quote:
+                quote = ""
+        elif c in "\"'":
+            quote = c
+            out.append(c)
+        elif not c.isspace():
+            out.append(c)
+        i += 1
+    return "".join(out)
+
+
 def parse_function(seq):
-    seq = re.sub(r'\s+', '', seq)
+    seq = _compact(seq)
     body = ast.parse(seq, mode='eval').body  # propagates SyntaxError
 
     if isinstance(body, ast.Call) and isinstance(body.func, ast.Name):

@@ -29,6 +29,34 @@ def test_distribution_loci_reuses_dist_with_no_parents():
     assert loci.get_distribution() is loci.get_distribution()
 
 
+def test_distribution_loci_parses_once_not_per_draw(monkeypatch):
+    """A draw with changing parents must not re-parse the spec or regenerate a
+    pydantic schema — the plan is built once in __init__."""
+    import sims_pars.bayesnet.loci as loci_mod
+
+    loci = DistributionLoci('v', 'norm(mu, sd)')  # the one legitimate parse
+
+    def boom(*a, **k):
+        raise AssertionError('re-parsed the distribution spec during a draw')
+
+    monkeypatch.setattr(loci_mod, 'parse_function', boom)
+    monkeypatch.setattr(loci_mod, 'complete_function', boom)
+
+    for i in range(20):
+        loci.get_distribution({'mu': float(i), 'sd': 1.0 + i})
+
+
+def test_sp_double_does_not_freeze_the_scipy_distribution():
+    import scipy.stats as sts
+
+    from sims_pars.prob import parse_distribution
+
+    d = parse_distribution('norm(mean=0, sd=1)')
+    # holds the module-level family + kwds, not a frozen rv_frozen instance
+    assert d.Family is sts.norm
+    assert d.Kwds == {'loc': 0, 'scale': 1}
+
+
 def test_datamodel_domain_is_cached():
     from sims_pars.fit.toys import get_betabin
     m = get_betabin((7, 14))

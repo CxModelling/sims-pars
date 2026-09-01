@@ -109,8 +109,18 @@ drops the TensorFlow dependency.
 
 - `MathExpression` compiles its expression to a code object once, instead of
   re-`eval`-ing a string on every call.
-- `DistributionLoci` caches the built distribution while its parent values are
-  unchanged — the dominant cost in fitting loops.
+- **`DistributionLoci` no longer rebuilds itself from source on every draw**
+  (~14x on sampling, which every ABC / ABC-SMC / GA fit is bound by). The tag,
+  argument expressions and creator-field mapping are resolved once in
+  `__init__`; a draw only evaluates the pre-compiled argument expressions. The
+  parent-value cache is kept as a fast path.
+- **`SpDouble` / `SpInteger` hold a SciPy distribution *family* + parameters
+  instead of a frozen instance.** Freezing (`sts.norm(loc=…)`) rebuilds the
+  whole distribution class on construction; calling `sts.norm.rvs(loc=…)`
+  unfrozen is ~25x cheaper. `SpDouble.Dist` → `SpDouble.Family` + `.Kwds`.
+- `parse_function` strips insignificant whitespace with a string-literal-aware
+  pass, so `cat({"low risk": 4})` keeps the spaces in its keys (they were
+  previously deleted).
 - The fitting objective `Domain` is computed once (`functools.cached_property`),
   not rebuilt on every attribute access.
 - `evaluate_nodes` sums lazily instead of allocating an array for a scalar
