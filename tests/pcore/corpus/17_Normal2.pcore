@@ -1,0 +1,4 @@
+PCore Normal2 {
+            mu1 ~ norm(0, 1)
+            mu2 ~ norm(0, 1)
+        }

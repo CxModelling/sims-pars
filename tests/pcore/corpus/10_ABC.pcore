@@ -1,0 +1,6 @@
+PCore ABC {
+    pa0 = 0.4
+    A ~ binom(10, pa0)
+    B ~ norm(0, 1)
+    C = A + B
+}

@@ -41,3 +41,10 @@
 
 - pytest suite, coverage config and a CI matrix (3.10–3.14).
 - MkDocs-Material documentation site published to GitHub Pages.
+- `sims_pars.pcore` — a real front end for PCore scripts: a whitespace-aware
+  lexer, a recursive-descent parser and located diagnostics. `parse(text)` never
+  raises; `compile_script(text)` / `bayes_net_from_script(text, strict=True)`
+  report every problem with a line and column instead of crashing or silently
+  dropping the line. Produces a byte-identical network to the legacy parser for
+  every script in `tests/pcore/corpus/`. A `sims-pars check` CLI and a written
+  language spec (`docs/spec/pcore.md`) come with it.

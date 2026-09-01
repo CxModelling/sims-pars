@@ -285,12 +285,21 @@ class BayesianNetwork:
         nx.draw(self.DAG, pos, with_labels=True, arrows=True)
 
 
-def bayes_net_from_script(script):
+def bayes_net_from_script(script, strict=False):
     """
-    Build a Bayesian network from script input
+    Build a Bayesian network from script input.
+
     :param script: multi-line string, script of a Bayesian network
+    :param strict: when True, parse with :mod:`sims_pars.pcore` and raise
+        :class:`~sims_pars.pcore.DiagnosticError` with a source span on any
+        problem. The default (lenient) path is the legacy line parser, kept for
+        one deprecation cycle — it silently skips lines it cannot classify.
     :return: BayesianNetwork
     """
+    if strict:
+        from sims_pars.pcore import compile_script
+        return compile_script(script, strict=True)
+
     lines = script.split('\n')
     lines = [line.replace(' ', '') for line in lines]
     for line in lines:

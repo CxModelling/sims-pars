@@ -56,6 +56,7 @@ nav:
       - The PCore script: concepts/bayes-net-script.md
       - Distributions: concepts/distributions.md
       - Simulation core: concepts/simulation-core.md
+  - PCore language spec: spec/pcore.md
   - Tutorials:
       - Overview: tutorials/index.md
       - Basic nodes: tutorials/Tutorial01_Basic Nodes.ipynb

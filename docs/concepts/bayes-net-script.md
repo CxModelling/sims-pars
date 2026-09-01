@@ -54,3 +54,11 @@ sample(bn, {'n0': 5})
 
 `bn.to_json()` / `bayes_net_from_json`, and `bn.to_script()` /
 `bayes_net_from_script`, both reproduce an equivalent network.
+
+## Strict parsing
+
+`bayes_net_from_script(script, strict=True)` parses through
+[`sims_pars.pcore`](../spec/pcore.md): every problem is reported with a line and
+column instead of crashing or being silently skipped. `sims-pars check
+model.pcore` runs the same checks from the command line. See the
+[language spec](../spec/pcore.md) for the grammar and the diagnostic codes.

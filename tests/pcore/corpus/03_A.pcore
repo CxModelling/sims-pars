@@ -1,0 +1,6 @@
+PCore A {
+            A = 5
+            B = A * 4
+            C = B + B2
+            D = pow(C)
+        }

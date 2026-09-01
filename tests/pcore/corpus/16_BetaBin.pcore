@@ -1,0 +1,10 @@
+PCore BetaBin {
+        al = 1
+        be = 1
+
+        p1 ~ beta(al, be)
+        p2 ~ beta(al, be)
+
+        x1 ~ binom(10, p1)
+        x2 ~ binom(n2, p2) 
+    }

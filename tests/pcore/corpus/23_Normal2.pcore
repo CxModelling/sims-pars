@@ -1,0 +1,39 @@
+PCore Normal2 {
+            r_die_tb_untx ~ unif(0.07, 0.19)
+            rr_die_asym ~ unif(0, 1)
+
+            prev_rural ~ unif(0.001, 0.01)
+            prev_urban ~ unif(0.001, 0.01)
+            prev_slum ~ unif(0.001, 0.01)
+
+            // Life history
+            r_sc ~ unif(0.15, 0.25)  # self-cure
+
+            // Care-seeking and diagnosis
+            rr_det_urban ~ unif(0.5, 5)
+            rr_det_slum ~ unif(0.5, 5)
+
+            p_dx_pri_frac ~ unif(0.5, 1)
+            p_dx_pub = 0.83
+            p_dx_eng = (p_dx_pub + p_dx_pri) / 2
+            p_dx_pri = p_dx_pub * p_dx_pri_frac
+
+            p_txi_pub = 0.88
+            p_txi_eng = 0.88
+            p_txi_pri = 0.75
+
+            p_public ~ unif(0.3, 0.8)
+            p_eng_rural_frac ~ unif(0, 1)
+            p_eng_rural = p_eng_urban * p_eng_rural_frac
+            p_eng_urban ~ unif(0, 1)
+            p_eng_slum = p_eng_urban
+            r_acf ~ unif(0, 0.05)
+
+            ppv = 0.85
+
+            // Treatment
+            r_tx_succ = 2
+            dur_succ_ds = 0.5
+            dur_succ_dr = 2
+            x ~ binom(size=60, prob = 0.5)
+        }

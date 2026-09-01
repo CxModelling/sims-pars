@@ -1,0 +1,4 @@
+PCore Data {
+            x1 ~ binom(10, p1)
+            x2 ~ binom(20, p2) 
+        }

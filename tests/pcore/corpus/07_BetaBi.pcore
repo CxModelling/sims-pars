@@ -1,0 +1,6 @@
+PCore BetaBi {
+    al = 1
+    be = 1
+    p ~ beta(al, be)
+    x ~ binom(n, p)
+}

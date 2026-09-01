@@ -1,0 +1,7 @@
+PCore Test {
+        a = 1
+        b = a + 3
+        c = b * 2
+        d ~ binom(b, 0. 5)
+        e = d + c
+    }

@@ -1,0 +1,5 @@
+PCore Root {
+        x = 60
+        t ~ binom(prob = 0.3, size = x)
+        u ~ unif(0.01, 0.02)
+    }

@@ -1,0 +1,6 @@
+PCore Chain {
+    a = 2
+    b ~ norm(a, 1)
+    c = b + 1
+    d ~ norm(c, 1)
+}

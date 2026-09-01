@@ -1,0 +1,6 @@
+PCore Test {
+    k = 5
+    a ~ unif(1, k)
+    b ~ norm(0, 1)
+    c ~ norm(b, a)
+}

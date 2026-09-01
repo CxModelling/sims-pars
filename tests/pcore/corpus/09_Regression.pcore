@@ -1,0 +1,4 @@
+PCore Regression {
+                    p ~ beta(1, 1)
+                    x ~ norm(0, 1)
+                }

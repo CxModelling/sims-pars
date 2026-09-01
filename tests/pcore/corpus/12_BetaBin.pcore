@@ -1,0 +1,7 @@
+PCore BetaBin {
+    al = 1
+    be = 1
+
+    p1 ~ beta(al, be)
+    p2 ~ beta(al, be)
+}

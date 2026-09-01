@@ -1,0 +1,4 @@
+PCore B2 {
+            C = B
+            D = pow(C)
+        }

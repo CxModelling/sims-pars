@@ -54,6 +54,9 @@ dev = [
     "ruff>=0.6",
 ]
 
+[project.scripts]
+sims-pars = "sims_pars.pcore.cli:main"
+
 [project.urls]
 Homepage = "https://github.com/CxModelling/sims-pars"
 Documentation = "https://cxmodelling.github.io/sims-pars/"
