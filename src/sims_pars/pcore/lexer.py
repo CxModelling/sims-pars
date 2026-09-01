@@ -19,13 +19,17 @@ from sims_pars.pcore.diagnostics import Diagnostics, Span
 
 __all__ = ['TokenKind', 'Token', 'lex']
 
-_KEYWORD = "pcore"
 _STRUCT = {"{": "LBRACE", "}": "RBRACE", "~": "TILDE", "=": "EQUALS", ":": "COLON"}
 
 
 class TokenKind(Enum):
     PCORE = auto()
+    FOR = auto()            # Phase 4: plates
+    IN = auto()
+    INCLUDE = auto()        # Phase 4: composition
     IDENT = auto()
+    INT = auto()             # Phase 4: plate bounds
+    DOTDOT = auto()          # Phase 4: '..' range operator
     LBRACE = auto()
     RBRACE = auto()
     TILDE = auto()
@@ -35,6 +39,16 @@ class TokenKind(Enum):
     DESCRIPTION = auto()   # text after '#'
     NEWLINE = auto()
     EOF = auto()
+
+
+# Reserved words, matched case-insensitively like 'PCore'. None of them are
+# used as identifiers anywhere in the v1 corpus.
+_KEYWORDS = {
+    "pcore": TokenKind.PCORE,
+    "for": TokenKind.FOR,
+    "in": TokenKind.IN,
+    "include": TokenKind.INCLUDE,
+}
 
 
 @dataclass(frozen=True)
@@ -165,6 +179,14 @@ def lex(src: str) -> tuple[list[Token], Diagnostics]:
                  cur.span_from(si, sl, sc))
             continue
 
+        # Phase 4: '..' range operator, checked ahead of the single-char dispatch
+        if ch == "." and cur.peek(1) == ".":
+            cur.advance()
+            cur.advance()
+            emit(TokenKind.DOTDOT, "..", cur.span_from(si, sl, sc))
+            at_line_start = False
+            continue
+
         if ch in _STRUCT:
             cur.advance()
             emit(TokenKind[_STRUCT[ch]], ch, cur.span_from(si, sl, sc))
@@ -176,8 +198,19 @@ def lex(src: str) -> tuple[list[Token], Diagnostics]:
             while not cur.eof() and cur.peek() in _IDENT_CONT:
                 cur.advance()
             text = src[si:cur.i]
-            kind = TokenKind.PCORE if text.lower() == _KEYWORD else TokenKind.IDENT
+            kind = _KEYWORDS.get(text.lower(), TokenKind.IDENT)
             emit(kind, text, cur.span_from(si, sl, sc))
+            at_line_start = False
+            # 'include' takes a raw (quoted) path, captured the same way '~'/'='
+            # capture their right-hand side.
+            expect_rhs = kind is TokenKind.INCLUDE
+            continue
+
+        # Phase 4: plate bounds ('for i in 1..5')
+        if ch.isdigit():
+            while not cur.eof() and cur.peek().isdigit():
+                cur.advance()
+            emit(TokenKind.INT, src[si:cur.i], cur.span_from(si, sl, sc))
             at_line_start = False
             continue
 

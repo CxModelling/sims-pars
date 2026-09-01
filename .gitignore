@@ -49,6 +49,7 @@ hood.py
 # docs build artifacts
 /site/
 /docs/tutorials/*.ipynb
+/docs/getting-started/*.ipynb
 .venv/
 /.cache/
 .coverage

@@ -18,7 +18,7 @@ def _check_paths(paths: list[str]) -> int:
             print(f"{name}: cannot read ({e})", file=sys.stderr)
             total += 1
             continue
-        diags = check(src)
+        diags = check(src, path=name)
         errs = [d for d in diags if d.is_error]
         if not diags:
             print(f"{name}: ok")

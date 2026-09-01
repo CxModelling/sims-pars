@@ -1,44 +1,35 @@
 from abc import ABCMeta, abstractmethod
 import numpy.random as rd
 from sims_pars.factory import get_atelier, AbsCreator
-from sims_pars.fitting.base import AbsObjective
 
 __author__ = 'Chu-Chang Ku'
 __all__ = ['get_crossover']
 
-# TODO(chromosome-api): usable only with a sims_pars.fitting objective, which is
-# currently broken against the Chromosome API. See sims_pars/fitting/base.py.
+# Crossover operators act on plain free-parameter dicts ({name: value}); the
+# GA re-serves the offspring through the model afterwards.
 
 
 class AbsCrossover(metaclass=ABCMeta):
     @abstractmethod
-    def crossover(self, p1, p2, obj: AbsObjective):
+    def crossover(self, g1: dict, g2: dict, keys) -> tuple[dict, dict]:
         pass
 
 
 class AverageCrossover(AbsCrossover):
-    def crossover(self, p1, p2, obj: AbsObjective):
-        locus = dict()
-        for node in obj.Domain:
-            locus[node.Name] = (p1[node.Name] + p2[node.Name]) / 2
-
-        return [locus, dict(locus)]
+    def crossover(self, g1, g2, keys):
+        child = {k: (g1[k] + g2[k]) / 2 for k in keys}
+        return dict(child), dict(child)
 
 
 class ShuffleCrossover(AbsCrossover):
-    def crossover(self, p1, p2, obj: AbsObjective):
-        locus1, locus2 = dict(), dict()
-        for node in obj.Domain:
-            node = node.Name
+    def crossover(self, g1, g2, keys):
+        c1, c2 = dict(), dict()
+        for k in keys:
             if rd.random() < 0.5:
-                locus1[node] = p2[node]
-                locus2[node] = p1[node]
+                c1[k], c2[k] = g2[k], g1[k]
             else:
-                locus1[node] = p1[node]
-                locus2[node] = p2[node]
-
-
-        return [locus1, locus2]
+                c1[k], c2[k] = g1[k], g2[k]
+        return c1, c2
 
 
 CrossoverCentre = get_atelier('crossover')
@@ -67,37 +58,12 @@ CrossoverCentre.register('shuffle', CreShu)
 
 
 if __name__ == '__main__':
-    from sims_pars.fitting.util import draw, serve_and_evaluate
-    from sims_pars.fitting.cases import BetaBin
+    from sims_pars.fit.toys import get_betabin
 
-    model0 = BetaBin()
+    model0 = get_betabin((4, 12))
+    ks = model0.FreeParameters
+    g1 = {k: model0.sample_prior()[k] for k in ks}
+    g2 = {k: model0.sample_prior()[k] for k in ks}
 
-    print('Free parameters: ', model0.FreeParameters)
-    for p in model0.Domain:
-        print(p)
-
-    ps = [draw(model0) for _ in range(2)]
-    ps = [p for p, i in ps]
-
-    print('p1', ps[0])
-    print('p2', ps[1])
-
-    print('Average crossover')
-    cro0 = get_crossover('average')
-
-    p1, p2 = cro0.crossover(*ps, model0)
-
-    p1 = serve_and_evaluate(model0, p1)
-    p2 = serve_and_evaluate(model0, p2)
-
-    print('avg: ', p1)
-
-    print('Shuffle crossover')
-    cro0 = get_crossover('shuffle')
-
-    p1, p2 = cro0.crossover(*ps, model0)
-
-    p1 = serve_and_evaluate(model0, p1)
-    p2 = serve_and_evaluate(model0, p2)
-
-    print('shuffle: ', p1)
+    for name in ('average', 'shuffle'):
+        print(name, get_crossover(name).crossover(g1, g2, ks))

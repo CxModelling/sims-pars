@@ -19,6 +19,7 @@ Public API::
     bn = compile_script(text, strict=False)   # legacy-lenient: drop bad lines
 """
 from sims_pars.pcore.diagnostics import Diagnostic, DiagnosticError, Severity, Span
+from sims_pars.pcore.evaluator import EvalError, evaluate
 from sims_pars.pcore.lower import check, compile_script, to_network
 from sims_pars.pcore.parser import Program, parse
 
@@ -32,4 +33,6 @@ __all__ = [
     'DiagnosticError',
     'Severity',
     'Span',
+    'evaluate',
+    'EvalError',
 ]

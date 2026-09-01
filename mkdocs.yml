@@ -52,6 +52,11 @@ markdown_extensions:
 nav:
   - Home: index.md
   - Installation: installation.md
+  - Getting started:
+      - Overview: getting-started/index.md
+      - "Chapter 1 — Writing a model": getting-started/GettingStarted01_The PCore language.ipynb
+      - "Chapter 2 — Sampling & intervention": getting-started/GettingStarted02_Sampling and intervention.ipynb
+      - "Chapter 3 — Fitting a model": getting-started/GettingStarted03_Fitting a model.ipynb
   - Concepts:
       - The PCore script: concepts/bayes-net-script.md
       - Distributions: concepts/distributions.md

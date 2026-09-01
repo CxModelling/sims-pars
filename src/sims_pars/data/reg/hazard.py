@@ -1,10 +1,9 @@
-# TODO(epidag): dead module — imports the missing predecessor package `epidag`. See sims_pars/data/__init__.py.
 import numpy as np
 import numpy.random as rd
 from scipy.special import gamma
 from scipy.interpolate import interp1d
 from abc import ABCMeta, abstractmethod
-from epidag.distribution import AbsDistribution
+from sims_pars.prob import AbsDistribution
 
 
 __all__ = ['Hazard', 'ExponentialHazard', 'WeibullHazard', 'EmpiricalHazard',

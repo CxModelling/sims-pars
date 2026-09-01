@@ -1,8 +1,7 @@
-# TODO(epidag): dead module — imports the missing predecessor package `epidag`. See sims_pars/data/__init__.py.
 import numpy as np
 from scipy.interpolate import interp1d
-from epidag.data.frame import AbsDataSet
-from epidag.distribution import CategoricalRV
+from sims_pars.data.frame import AbsDataSet
+from sims_pars.prob import CategoricalRV
 
 __author__ = 'TimeWz667'
 __all__ = ['TimeSeries', 'TimeSeriesVector', 'TimeSeriesProbabilityTable', 'LeeCarter']

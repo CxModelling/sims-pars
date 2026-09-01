@@ -10,7 +10,7 @@ from dataclasses import dataclass, field
 
 from sims_pars.pcore.diagnostics import Span
 
-__all__ = ['NodeDef', 'Model']
+__all__ = ['NodeDef', 'IncludeDef', 'Model']
 
 
 @dataclass
@@ -22,6 +22,8 @@ class NodeDef:
     rhs_span: Span | None
     span: Span
     description: str | None = None
+    type_ann: str | None = None  # Phase 3: 'name : type' annotation, e.g. 'float'
+    type_span: Span | None = None
 
     @property
     def is_sample(self) -> bool:
@@ -37,8 +39,16 @@ class NodeDef:
 
 
 @dataclass
+class IncludeDef:
+    """Phase 4: ``include "path.pcore"`` — splice another file's nodes in."""
+    path: str
+    span: Span
+
+
+@dataclass
 class Model:
     name: str
     name_span: Span
     span: Span
     statements: list[NodeDef] = field(default_factory=list)
+    includes: list[IncludeDef] = field(default_factory=list)

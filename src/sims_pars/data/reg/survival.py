@@ -1,8 +1,7 @@
-# TODO(epidag): dead module — imports the missing predecessor package `epidag`. See sims_pars/data/__init__.py.
 import numpy as np
 from scipy.special import expit
-from epidag.data.reg.hazard import *
-from epidag.data.reg.linear import Regression, LinearCombination
+from sims_pars.data.reg.hazard import *
+from sims_pars.data.reg.linear import Regression, LinearCombination
 
 __author__ = 'TimeWz667'
 __all__ = ['CoxRegression', 'ZeroInflatedCoxRegression']

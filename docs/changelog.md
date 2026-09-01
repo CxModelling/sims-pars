@@ -60,9 +60,26 @@ drops the TensorFlow dependency.
     the repo and the notebooks,
   - a `sims-pars check model.pcore` CLI,
   - a written language specification, `docs/spec/pcore.md`.
+- **PCore v2 syntax** (`sims_pars.pcore`, additive — every v1 script is still
+  valid):
+  - `name : type` annotations (`float int bool vector simplex`); a constant
+    right-hand side is checked against the declared type at compile time
+    (`E0300` unknown type, `E0301` value mismatch — a warning),
+  - **plates** — `for i in lo..hi { ... }` expands to one node per iteration
+    (`x` → `x_1..x_N`); `name[i]` picks a sibling, a bare `i` is the index,
+  - **composition** — `include "other.pcore"` splices another file's nodes in,
+    with relative-path resolution, cycle detection and located errors,
+  - `sims_pars.pcore.evaluate` — a dedicated expression evaluator with an
+    explicit, documented operator table and no `eval()`, used for the static
+    checks above.
+- **`sims_pars.fit.ga`** — the genetic algorithm rebuilt on the current
+  `DataModel` / `Chromosome` API (it previously imported the removed
+  `sims_pars.fitting`). `GeneticAlg` implements the full `Fitter` protocol;
+  crossover / mutation / selection operators operate on free-parameter dicts.
 - **Documentation site** — MkDocs-Material under `docs/`, `mkdocs.yml`,
   `scripts/stage_tutorials.py`; concept pages, an API reference (mkdocstrings),
-  the four tutorial notebooks, and the PCore spec. Deployed to GitHub Pages by
+  a three-chapter **Getting Started** guide (`notebooks/GettingStarted0*.ipynb`),
+  the tutorial notebooks, and the PCore spec. Deployed to GitHub Pages by
   `.github/workflows/docs.yml`.
 - **CI** — `.github/workflows/ci.yml`: `ruff check` + `pytest --cov` on a
   3.10–3.14 matrix, plus a strict docs build.

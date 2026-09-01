@@ -1,5 +1,6 @@
 from sims_pars.fit.base import Fitter, Particle
 from sims_pars.fit.results import ParameterSet
+from sims_pars.fit.utils import *
 import numpy as np
 import numpy.random as rd
 from joblib import Parallel, delayed
@@ -19,19 +20,6 @@ class StateABCSMC:
         self.Acceptance = acc
         self.Eps = eps
         self.EpsThres = eps_thres
-
-
-def sample_fin(model, unpack=False):
-    di = np.inf
-    n_eval = 0
-    while np.isinf(di):
-        n_eval += 1
-        p = model.sample_prior()
-        sim = model.simulate(p)
-        di = model.calc_distance(sim)
-
-    sim = sim.to_json() if unpack else sim
-    return di, sim, n_eval
 
 
 def sample_fin_cont(model, p0, unpack=False):

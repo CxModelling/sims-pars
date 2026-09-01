@@ -7,7 +7,7 @@ __all__ = ['sample', 'sample_minimally', 'evaluate_nodes', 'sample_chromosome']
 
 def sample(bn, cond=None):
     """
-    Sample every variables of a Bayesian Network
+    Sample every variable of a Bayesian Network
     :param bn: a Bayesian Network
     :param cond: dict, given variables
     :return:

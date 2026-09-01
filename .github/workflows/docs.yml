@@ -8,6 +8,7 @@ on:
       - "mkdocs.yml"
       - "src/**"
       - "notebooks/Tutorial*.ipynb"
+      - "notebooks/GettingStarted*.ipynb"
       - "scripts/stage_tutorials.py"
       - ".github/workflows/docs.yml"
   workflow_dispatch:

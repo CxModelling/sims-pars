@@ -4,60 +4,48 @@ import numpy as np
 import numpy.random as rd
 from scipy.special import logsumexp
 from sims_pars.factory import get_atelier, AbsCreator
-from sims_pars.fitting.base import AbsObjective
 
-__all__ = ['get_selector']
 __author__ = 'Chu-Chang Ku'
+__all__ = ['get_selector']
 
-# TODO(chromosome-api): both selectors read p.LogLikelihood / p.LogPosterior,
-# which no longer exist on Chromosome. Broken until the fit/ fitting merge.
+# Selectors consume a list of (fitness, gene) pairs -- fitness to be maximised,
+# gene a plain free-parameter dict -- and return a fresh list of genes.
 
 
 class AbsSelector(metaclass=ABCMeta):
     @abstractmethod
-    def select(self, ps, obj: AbsObjective, fitness='MAP'):
+    def select(self, scored, n) -> list:
         pass
+
+    @staticmethod
+    def _eligible(scored):
+        return [(f, g) for f, g in scored if np.isfinite(f)]
 
 
 class TourSelection(AbsSelector):
     def __init__(self, k):
         self.K = k
 
-    def select(self, ps, obj: AbsObjective, fitness='MAP'):
-        n_pop = len(ps)
-        eligible = [p for p in ps if np.isfinite(p.LogLikelihood)]
+    def select(self, scored, n):
+        elig = self._eligible(scored)
+        assert len(elig) >= self.K, 'not enough finite-fitness genes for a tournament'
 
-        assert len(eligible) > self.K
-
-        sel = list()
-        while len(sel) < n_pop:
-            candidates = [eligible[i] for i in rd.choice(len(eligible), self.K, replace=False)]
-            if fitness == 'MAP':
-                winner = max(candidates, key=lambda p: p.LogPosterior)
-            else:
-                winner = max(candidates, key=lambda p: p.LogLikelihood)
-
-            sel.append(winner.clone())
-        return sel
+        out = list()
+        while len(out) < n:
+            cand = [elig[i] for i in rd.choice(len(elig), self.K, replace=False)]
+            out.append(dict(max(cand, key=lambda t: t[0])[1]))
+        return out
 
 
 class ImpSelection(AbsSelector):
-    def select(self, ps, obj: AbsObjective, fitness='MAP'):
-        n_pop = len(ps)
-        eligible = [p for p in ps if np.isfinite(p.LogLikelihood)]
+    def select(self, scored, n):
+        elig = self._eligible(scored)
+        assert len(elig) > 5, 'not enough finite-fitness genes for importance sampling'
 
-        assert len(eligible) > 5
-
-        if fitness == 'MAP':
-            wts = np.array([p.LogPosterior for p in eligible])
-        else:
-            wts = np.array([p.LogLikelihood for p in eligible])
-
+        wts = np.array([f for f, _ in elig])
         wts -= logsumexp(wts)
-
-        sel = rd.choice(len(eligible), n_pop, replace=True, p=np.exp(wts))
-        sel = [eligible[i].clone() for i in sel]
-        return sel
+        idx = rd.choice(len(elig), n, replace=True, p=np.exp(wts))
+        return [dict(elig[i][1]) for i in idx]
 
 
 SelectCentre = get_atelier('selector')
@@ -88,23 +76,13 @@ SelectCentre.register('importance', CreImp)
 
 
 if __name__ == '__main__':
-    from sims_pars.fitting.util import draw
-    from sims_pars.fitting.cases import BetaBin
+    from sims_pars.fit.toys import get_betabin
+    from sims_pars.fit.ga.util import sample_prior, fitness_of
 
-    model0 = BetaBin()
+    model0 = get_betabin((4, 12))
+    ks = model0.FreeParameters
+    pop = [sample_prior(model0)[0] for _ in range(30)]
+    scored = [(fitness_of(pt, 'MAP'), {k: pt.Pars[k] for k in ks}) for pt in pop]
 
-    print('Free parameters: ', model0.FreeParameters)
-    for par in model0.Domain:
-        print(par)
-
-    ps0 = [draw(model0) for _ in range(30)]
-    ps0 = [p for p, _ in ps0]
-    print(np.mean([p.LogLikelihood for p in ps0]))
-
-    sel0 = get_selector('tour(5)')
-    ps1 = sel0.select(ps0, model0)
-    print(np.mean([p.LogLikelihood for p in ps1]))
-
-    sel0 = get_selector('importance')
-    ps2 = sel0.select(ps0, model0)
-    print(np.mean([p.LogLikelihood for p in ps2]))
+    print('tour   ->', len(get_selector('tour(5)').select(scored, 30)))
+    print('import ->', len(get_selector('importance').select(scored, 30)))

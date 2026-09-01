@@ -38,6 +38,12 @@ pip install sims-pars
 
 See [Installation](installation.md) for optional extras and development setup.
 
+## New here?
+
+Start with the **[Getting started](getting-started/index.md)** guide — three
+short chapters that build one model, sample and intervene on it, then fit it to
+data.
+
 ## Requirements
 
 Python 3.10+ · NumPy 2 · SciPy · pandas · pydantic 2 · networkx

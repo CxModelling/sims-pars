@@ -6,13 +6,16 @@ the parse and nothing is ever silently dropped.
 """
 from __future__ import annotations
 
-from sims_pars.pcore.ast import Model, NodeDef
+import re
+
+from sims_pars.pcore.ast import IncludeDef, Model, NodeDef
 from sims_pars.pcore.diagnostics import Diagnostic, Diagnostics
 from sims_pars.pcore.lexer import Token, TokenKind, lex
 
 __all__ = ['Program', 'parse']
 
 _END = {TokenKind.NEWLINE, TokenKind.RBRACE, TokenKind.EOF}
+_IDENT_RE = r'[A-Za-z_]\w*'
 
 
 class Program:
@@ -121,6 +124,14 @@ class _Parser:
                 break
             if self.at(TokenKind.PCORE):
                 break  # a new model — let the program loop take it
+            if self.at(TokenKind.FOR):
+                model.statements.extend(self.parse_plate())
+                continue
+            if self.at(TokenKind.INCLUDE):
+                inc = self.parse_include()
+                if inc is not None:
+                    model.includes.append(inc)
+                continue
             stmt = self.parse_statement()
             if stmt is not None:
                 model.statements.append(stmt)
@@ -137,13 +148,19 @@ class _Parser:
         name_tok = self.advance()
         name, name_span = name_tok.text, name_tok.span
 
+        type_ann, type_span = None, None
         if self.at(TokenKind.COLON):
             self.advance()
-            self.recover_line()
-            self.diags.error(name_span.to(self.peek().span), "E0111",
-                             "type annotations are not supported yet",
-                             hint="drop the ': type' for now")
-            return None
+            if self.at(TokenKind.IDENT):
+                t = self.advance()
+                type_ann, type_span = t.text, t.span
+            else:
+                bad = self.peek()
+                self.diags.error(bad.span, "E0111",
+                                 f"expected a type name after ':', found {bad.text or 'end of line'!r}",
+                                 hint="e.g. 'x: float ~ norm(0, 1)'")
+                self.recover_line()
+                return None
 
         if self.at(TokenKind.TILDE, TokenKind.EQUALS):
             op_tok = self.advance()
@@ -176,7 +193,194 @@ class _Parser:
 
         span = name_span.to(rhs_span or name_span)
         return NodeDef(name=name, name_span=name_span, op=op, rhs=rhs,
-                       rhs_span=rhs_span, span=span, description=description)
+                       rhs_span=rhs_span, span=span, description=description,
+                       type_ann=type_ann, type_span=type_span)
+
+    # --- Phase 4: plates -------------------------------------------------
+    def _expect_int(self, code: str, message: str) -> int | None:
+        if not self.at(TokenKind.INT):
+            self.diags.error(self.peek().span, code, message)
+            self.recover_line()
+            return None
+        return int(self.advance().text)
+
+    def parse_plate(self) -> list[NodeDef]:
+        """``for i in lo..hi { statement* }`` -> lo..hi copies of the body,
+        with ``i`` substituted (see :func:`_expand_plate`)."""
+        kw = self.advance()  # FOR
+
+        if not self.at(TokenKind.IDENT):
+            self.diags.error(self.peek().span, "E0120",
+                             "expected a loop variable after 'for'")
+            self.recover_line()
+            return []
+        var = self.advance().text
+
+        if not self.at(TokenKind.IN):
+            self.diags.error(self.peek().span, "E0121",
+                             "expected 'in' after the loop variable",
+                             hint="e.g. 'for i in 1..5 { ... }'")
+            self.recover_line()
+            return []
+        self.advance()
+
+        lo = self._expect_int("E0122", "expected an integer lower bound")
+        if lo is None:
+            return []
+        if not self.at(TokenKind.DOTDOT):
+            self.diags.error(self.peek().span, "E0123",
+                             "expected '..' between the plate bounds")
+            self.recover_line()
+            return []
+        self.advance()
+        hi = self._expect_int("E0124", "expected an integer upper bound")
+        if hi is None:
+            return []
+
+        if self.at(TokenKind.LBRACE):
+            self.advance()
+        else:
+            self.diags.error(self.peek().span, "E0125",
+                             "expected '{' to open the plate body")
+            return []
+
+        body: list[NodeDef] = []
+        while True:
+            self.skip_newlines()
+            if self.at(TokenKind.RBRACE):
+                self.advance()
+                break
+            if self.at(TokenKind.EOF, TokenKind.PCORE):
+                self.diags.error(self.peek().span, "E0126",
+                                 f"plate 'for {var} in ...' is never closed with '}}'")
+                break
+            if self.at(TokenKind.FOR):
+                body.extend(self.parse_plate())
+                continue
+            if self.at(TokenKind.INCLUDE):
+                self.diags.error(self.peek().span, "E0127",
+                                 "'include' is not allowed inside a plate")
+                self.advance()
+                if self.at(TokenKind.EXPR):
+                    self.advance()
+                continue
+            stmt = self.parse_statement()
+            if stmt is not None:
+                body.append(stmt)
+
+        if hi < lo:
+            self.diags.warning(kw.span, "E0128", f"empty plate range: {lo}..{hi}")
+        return _expand_plate(var, lo, hi, body)
+
+    # --- Phase 4: composition ---------------------------------------------
+    def parse_include(self) -> IncludeDef | None:
+        kw = self.advance()  # INCLUDE
+
+        if not self.at(TokenKind.EXPR):
+            self.diags.error(kw.span, "E0130",
+                             "expected a quoted path after 'include'",
+                             hint='e.g. include "shared.pcore"')
+            self.recover_line()
+            return None
+        tok = self.advance()
+        text = tok.text.strip()
+        if len(text) >= 2 and text[0] == text[-1] and text[0] in "\"'":
+            path = text[1:-1]
+        else:
+            self.diags.error(tok.span, "E0131",
+                             "the include path must be a quoted string",
+                             hint='e.g. include "shared.pcore"')
+            self.recover_line()
+            return None
+
+        end = self.peek()
+        if not self.at(*_END):
+            self.diags.error(end.span, "E0132",
+                             f"unexpected {end.text!r} after include")
+            self.recover_line()
+        return IncludeDef(path=path, span=kw.span.to(tok.span))
+
+
+def _subst(text: str | None, var: str, k: int) -> str | None:
+    """Substitute a plate's loop variable inside a raw RHS string, leaving
+    quoted contents untouched.
+
+    Two forms are recognised outside of string literals:
+
+    * ``name[var]`` (a sibling plated node, indexed by the loop variable) ->
+      ``name_k``
+    * a bare, whole-word ``var`` (the loop variable used as a value) -> ``k``
+    """
+    if not text:
+        return text
+
+    bracket_idx = re.compile(rf'\b({_IDENT_RE})\[{re.escape(var)}\]')
+    bare = re.compile(rf'\b{re.escape(var)}\b')
+
+    segments: list[tuple[bool, str]] = []
+    buf: list[str] = []
+    quote = ""
+    i, n = 0, len(text)
+    while i < n:
+        c = text[i]
+        if quote:
+            buf.append(c)
+            if c == "\\" and i + 1 < n:
+                buf.append(text[i + 1])
+                i += 2
+                continue
+            if c == quote:
+                segments.append((True, "".join(buf)))
+                buf = []
+                quote = ""
+            i += 1
+            continue
+        if c in "\"'":
+            if buf:
+                segments.append((False, "".join(buf)))
+                buf = []
+            quote = c
+            buf.append(c)
+            i += 1
+            continue
+        buf.append(c)
+        i += 1
+    if buf:
+        segments.append((quote != "", "".join(buf)))
+
+    out = []
+    for is_quoted, chunk in segments:
+        if not is_quoted:
+            chunk = bracket_idx.sub(lambda m: f'{m.group(1)}_{k}', chunk)
+            chunk = bare.sub(str(k), chunk)
+        out.append(chunk)
+    return "".join(out)
+
+
+def _expand_plate(var: str, lo: int, hi: int, body: list[NodeDef]) -> list[NodeDef]:
+    """Expand one plate body into ``lo..hi`` concrete :class:`NodeDef`\\ s.
+
+    Declared names are suffixed (``x`` -> ``x_1, x_2, ...``); references of
+    the form ``name[var]`` in a right-hand side pick the matching sibling;
+    a bare ``var`` in a right-hand side becomes the literal iteration value.
+    Nested plates are already expanded by the time this runs (parsing is
+    depth-first), so this never needs to recurse.
+    """
+    out: list[NodeDef] = []
+    for k in range(lo, hi + 1):
+        for s in body:
+            out.append(NodeDef(
+                name=f'{s.name}_{k}',
+                name_span=s.name_span,
+                op=s.op,
+                rhs=_subst(s.rhs, var, k),
+                rhs_span=s.rhs_span,
+                span=s.span,
+                description=s.description,
+                type_ann=s.type_ann,
+                type_span=s.type_span,
+            ))
+    return out
 
 
 def parse(source: str) -> Program:
