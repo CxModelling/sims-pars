@@ -45,3 +45,10 @@ venv.bak/
 log/
 .idea/
 hood.py
+
+# docs build artifacts
+/site/
+/docs/tutorials/*.ipynb
+.venv/
+/.cache/
+.coverage
