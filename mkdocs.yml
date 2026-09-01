@@ -1,0 +1,74 @@
+site_name: sims-pars
+site_description: Serving stochastic parameters to simulation models
+site_url: https://cxmodelling.github.io/sims-pars/
+repo_url: https://github.com/CxModelling/sims-pars
+repo_name: CxModelling/sims-pars
+edit_uri: ""
+
+theme:
+  name: material
+  palette:
+    - media: "(prefers-color-scheme: light)"
+      scheme: default
+      toggle:
+        icon: material/weather-night
+        name: Switch to dark mode
+    - media: "(prefers-color-scheme: dark)"
+      scheme: slate
+      toggle:
+        icon: material/weather-sunny
+        name: Switch to light mode
+  features:
+    - navigation.sections
+    - navigation.top
+    - content.code.copy
+    - search.suggest
+
+plugins:
+  - search
+  - mkdocs-jupyter:
+      include: ["*.ipynb"]
+      execute: false
+      include_source: true
+  - mkdocstrings:
+      handlers:
+        python:
+          paths: [src]
+          options:
+            docstring_style: sphinx
+            show_root_heading: true
+            show_source: false
+            members_order: source
+            separate_signature: true
+
+markdown_extensions:
+  - admonition
+  - pymdownx.highlight
+  - pymdownx.superfences
+  - pymdownx.details
+  - toc:
+      permalink: true
+
+nav:
+  - Home: index.md
+  - Installation: installation.md
+  - Concepts:
+      - The PCore script: concepts/bayes-net-script.md
+      - Distributions: concepts/distributions.md
+      - Simulation core: concepts/simulation-core.md
+  - Tutorials:
+      - Overview: tutorials/index.md
+      - Basic nodes: tutorials/Tutorial01_Basic Nodes.ipynb
+      - Bayesian networks: tutorials/Tutorial02_Bayesian Networks.ipynb
+      - Sampling: tutorials/Tutorial03_Sampling.ipynb
+      - Model fitting: tutorials/Tutorial04_Model fitting.ipynb
+  - Fitting:
+      - Overview: fitting/index.md
+      - ABC & ABC-SMC: fitting/abc.md
+  - API reference:
+      - sims_pars: api/index.md
+      - bayesnet: api/bayesnet.md
+      - simulation: api/simulation.md
+      - prob & util: api/prob.md
+      - fit: api/fit.md
+  - Changelog: changelog.md

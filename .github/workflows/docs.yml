@@ -1,0 +1,39 @@
+name: Deploy docs
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "docs/**"
+      - "mkdocs.yml"
+      - "src/**"
+      - "notebooks/Tutorial*.ipynb"
+      - "scripts/stage_tutorials.py"
+      - ".github/workflows/docs.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: docs-deploy
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install
+        run: |
+          python -m pip install --upgrade pip
+          pip install -e ".[docs]"
+      - name: Stage tutorials
+        run: python scripts/stage_tutorials.py
+      - name: Deploy to GitHub Pages
+        run: mkdocs gh-deploy --force --no-history
