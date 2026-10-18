@@ -36,7 +36,7 @@ pip install sims-pars
 Or straight from GitHub (pin a tag/branch/commit with `@<ref>`):
 
 ```bash
-pip install "git+https://github.com/CxModelling/sims-pars.git@v3.0.0"
+pip install "git+https://github.com/CxModelling/sims-pars.git@v3.0.1"
 ```
 
 Python 3.10+ · NumPy 2 · SciPy · pandas · pydantic 2 · networkx.

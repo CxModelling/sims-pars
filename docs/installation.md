@@ -33,26 +33,26 @@ Pin a released version or any branch / commit with `@<ref>`, and add extras in
 the usual brackets:
 
 ```bash
-pip install "sims-pars[plot] @ git+https://github.com/CxModelling/sims-pars.git@v3.0.0"
+pip install "sims-pars[plot] @ git+https://github.com/CxModelling/sims-pars.git@v3.0.1"
 pip install "git+https://github.com/CxModelling/sims-pars.git@main#egg=sims-pars[hme]"
 ```
 
 `uv` works the same way:
 
 ```bash
-uv pip install "git+https://github.com/CxModelling/sims-pars.git@v3.0.0"
+uv pip install "git+https://github.com/CxModelling/sims-pars.git@v3.0.1"
 ```
 
 In a `pyproject.toml` / `requirements.txt`:
 
 ```
-sims-pars @ git+https://github.com/CxModelling/sims-pars.git@v3.0.0
+sims-pars @ git+https://github.com/CxModelling/sims-pars.git@v3.0.1
 ```
 
 Or download a source tarball for a tag and install it offline:
 
 ```bash
-pip install https://github.com/CxModelling/sims-pars/archive/refs/tags/v3.0.0.tar.gz
+pip install https://github.com/CxModelling/sims-pars/archive/refs/tags/v3.0.1.tar.gz
 ```
 
 ## Development setup
